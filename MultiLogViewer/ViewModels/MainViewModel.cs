@@ -16,6 +16,7 @@ namespace MultiLogViewer.ViewModels
     {
         private readonly ILogFileReader _logFileReader;
         private readonly IUserDialogService _userDialogService;
+        private readonly ILogFormatConfigLoader _logFormatConfigLoader;
 
         private readonly ObservableCollection<LogEntry> _logEntries = new();
         public ICollectionView LogEntriesView { get; }
@@ -36,10 +37,11 @@ namespace MultiLogViewer.ViewModels
             }
         }
 
-        public MainViewModel(ILogFileReader logFileReader, IUserDialogService userDialogService)
+        public MainViewModel(ILogFileReader logFileReader, IUserDialogService userDialogService, ILogFormatConfigLoader logFormatConfigLoader)
         {
             _logFileReader = logFileReader;
             _userDialogService = userDialogService;
+            _logFormatConfigLoader = logFormatConfigLoader;
             LogEntriesView = CollectionViewSource.GetDefaultView(_logEntries);
             LogEntriesView.Filter = FilterLogEntries;
         }
@@ -63,23 +65,19 @@ namespace MultiLogViewer.ViewModels
             var filePath = _userDialogService.OpenFileDialog();
             if (filePath != null)
             {
-                // TODO: どのLogFormatConfigを使用するかを選択するUIが必要。
+                // config.yaml から設定を読み込む
+                // TODO: ユーザーがどのLogFormatConfigを使用するかを選択するUIが必要。
                 //       現時点では、最初のConfigを決め打ちで使用する。
                 //       将来的には、設定ファイルから読み込んだConfigを選択できるようにする。
-                var logFormatConfig = new LogFormatConfig
+                var appConfig = _logFormatConfigLoader.Load(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.yaml"));
+                if (appConfig.LogFormats == null || !appConfig.LogFormats.Any())
                 {
-                    Name = "ApplicationLog",
-                    Pattern = @"^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(?<level>\w+)\] (?<message>.*)$",
-                    TimestampFormat = "yyyy-MM-dd HH:mm:ss",
-                    DisplayColumns = new List<DisplayColumnConfig>
-                    {
-                        new DisplayColumnConfig { Header = "Timestamp", BindingPath = "Timestamp", Width = 150 },
-                        new DisplayColumnConfig { Header = "Level", BindingPath = "Level", Width = 80 },
-                        new DisplayColumnConfig { Header = "Message", BindingPath = "Message", Width = 500 },
-                        new DisplayColumnConfig { Header = "User", BindingPath = "AdditionalData[user]", Width = 80 },
-                        new DisplayColumnConfig { Header = "Session", BindingPath = "AdditionalData[session]", Width = 80 }
-                    }
-                };
+                    // 設定ファイルが見つからないか、LogFormatsが定義されていない場合はエラー処理
+                    // TODO: エラーダイアログの表示など
+                    MessageBox.Show("Log format configuration not found or empty in config.yaml.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                var logFormatConfig = appConfig.LogFormats.First(); // 最初の設定を決め打ちで使用
 
                 _logEntries.Clear();
                 foreach (var entry in _logFileReader.Read(filePath, logFormatConfig))
