@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using System.IO;
+using System.Windows; // MessageBox を使用するため追加
 
 namespace MultiLogViewer.Services
 {
@@ -19,6 +20,11 @@ namespace MultiLogViewer.Services
             }
 
             return null;
+        }
+
+        public void ShowError(string message, string title)
+        {
+            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

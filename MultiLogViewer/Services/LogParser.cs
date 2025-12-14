@@ -48,12 +48,6 @@ namespace MultiLogViewer.Services
                 logEntry.Timestamp = DateTime.MinValue;
             }
 
-            // Levelの取得
-            if (match.Groups["level"].Success)
-            {
-                logEntry.Level = match.Groups["level"].Value;
-            }
-
             // Messageの取得
             if (match.Groups["message"].Success)
             {
@@ -64,7 +58,7 @@ namespace MultiLogViewer.Services
             foreach (Group group in match.Groups)
             {
                 if (group.Name != "0" && group.Success &&
-                    group.Name != "timestamp" && group.Name != "level" && group.Name != "message")
+                    group.Name != "timestamp" && group.Name != "message")
                 {
                     logEntry.AdditionalData[group.Name] = group.Value;
                 }

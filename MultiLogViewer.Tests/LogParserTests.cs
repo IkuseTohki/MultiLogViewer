@@ -32,10 +32,11 @@ namespace MultiLogViewer.Tests
 
             // Assert
             Assert.IsNotNull(logEntry);
-            Assert.AreEqual(DateTime.ParseExact("2023-10-26 10:30:45", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), logEntry.Timestamp);
-            Assert.AreEqual("INFO", logEntry.Level);
+            Assert.AreEqual(DateTime.ParseExact("2023-10-26 10:30:45", "yyyy-MM-dd HH:mm:ss", CultureInfo
+.InvariantCulture), logEntry.Timestamp);
+            Assert.AreEqual("INFO", logEntry.AdditionalData["level"]);
             Assert.AreEqual("User logged in successfully.", logEntry.Message);
-            Assert.IsEmpty(logEntry.AdditionalData); // 基本項目で全て抽出されるため、AdditionalDataは空
+            Assert.HasCount(1, logEntry.AdditionalData); // levelのみが格納されるため、Countは1
         }
 
         /// <summary>
@@ -58,15 +59,29 @@ namespace MultiLogViewer.Tests
             var logEntry = parser.Parse(logLine);
 
             // Assert
+
             Assert.IsNotNull(logEntry);
-            Assert.AreEqual(DateTime.ParseExact("2023-10-26 11:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), logEntry.Timestamp);
-            Assert.AreEqual("DEBUG", logEntry.Level);
+
+            Assert.AreEqual(DateTime.ParseExact("2023-10-26 11:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo
+
+.InvariantCulture), logEntry.Timestamp);
+
             Assert.AreEqual("Data processed.", logEntry.Message);
-            Assert.HasCount(2, logEntry.AdditionalData);
+
+            Assert.HasCount(3, logEntry.AdditionalData);
+
+            Assert.IsTrue(logEntry.AdditionalData.ContainsKey("level"));
+
+            Assert.AreEqual("DEBUG", logEntry.AdditionalData["level"]);
+
             Assert.IsTrue(logEntry.AdditionalData.ContainsKey("user"));
+
             Assert.AreEqual("alice", logEntry.AdditionalData["user"]);
+
             Assert.IsTrue(logEntry.AdditionalData.ContainsKey("session"));
+
             Assert.AreEqual("12345", logEntry.AdditionalData["session"]);
+
         }
 
         /// <summary>

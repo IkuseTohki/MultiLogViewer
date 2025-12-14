@@ -71,23 +71,20 @@ namespace MultiLogViewer.Tests
         }
 
         /// <summary>
-        /// テスト観点: config.yamlが見つからない場合に、LogErrorが表示されることを確認する。
+        /// テスト観点: config.yamlが見つからない場合に、エラーダイアログが表示されることを確認する。
         /// </summary>
         [TestMethod]
         public void OpenFileCommand_ConfigNotFound_ShowsErrorMessage()
         {
             // Arrange
             _mockUserDialogService.Setup(s => s.OpenFileDialog()).Returns("some_path.log");
-            _mockLogFormatConfigLoader.Setup(l => l.Load(It.IsAny<string>())).Returns(new AppConfig { LogFormats = null });
+            _mockLogFormatConfigLoader.Setup(l => l.Load(It.IsAny<string>())).Returns(new AppConfig { LogFormats = new List<LogFormatConfig>() }); // 空のリストを返すように設定
 
             // Act
             _viewModel.OpenFileCommand.Execute(null);
 
             // Assert
-            // MessageBox.Show の呼び出しを直接テストするのは難しいが、
-            // Viewの変更をトリガーするようなViewModelのプロパティ変更をアサートするなど、
-            // 間接的にエラーハンドリングが動作したことを確認する。
-            // 今回は、LogEntriesが空のままであることを確認する。
+            _mockUserDialogService.Verify(s => s.ShowError(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             Assert.AreEqual(0, _viewModel.LogEntriesView.Cast<LogEntry>().Count());
         }
     }

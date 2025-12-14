@@ -3,5 +3,6 @@ namespace MultiLogViewer.Services
     public interface IUserDialogService
     {
         string? OpenFileDialog();
+        void ShowError(string message, string title);
     }
 }

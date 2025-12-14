@@ -73,8 +73,7 @@ namespace MultiLogViewer.ViewModels
                 if (appConfig.LogFormats == null || !appConfig.LogFormats.Any())
                 {
                     // 設定ファイルが見つからないか、LogFormatsが定義されていない場合はエラー処理
-                    // TODO: エラーダイアログの表示など
-                    MessageBox.Show("Log format configuration not found or empty in config.yaml.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _userDialogService.ShowError("Log format configuration not found or empty in config.yaml.", "Error");
                     return;
                 }
                 var logFormatConfig = appConfig.LogFormats.First(); // 最初の設定を決め打ちで使用

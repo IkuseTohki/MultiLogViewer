@@ -55,12 +55,12 @@ namespace MultiLogViewer.Tests
 
             var firstEntry = logEntries.First();
             Assert.AreEqual(new DateTime(2023, 10, 26, 10, 30, 45), firstEntry.Timestamp);
-            Assert.AreEqual("INFO", firstEntry.Level);
+            Assert.AreEqual("INFO", firstEntry.AdditionalData["level"]);
             Assert.AreEqual("User logged in successfully.", firstEntry.Message);
 
             var secondEntry = logEntries.Last();
             Assert.AreEqual(new DateTime(2023, 10, 26, 10, 31, 00), secondEntry.Timestamp);
-            Assert.AreEqual("WARN", secondEntry.Level);
+            Assert.AreEqual("WARN", secondEntry.AdditionalData["level"]);
             Assert.AreEqual("Deprecated API called.", secondEntry.Message);
         }
     }

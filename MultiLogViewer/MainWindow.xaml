@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MultiLogViewer"
+        xmlns:behaviors="clr-namespace:MultiLogViewer.Behaviors"
         mc:Ignorable="d"
         Title="Multi Log Viewer" Height="450" Width="800"
         Background="{StaticResource WindowBackgroundBrush}">
@@ -24,22 +25,8 @@
             <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" Width="200" />
         </StackPanel>
 
-                                <DataGrid ItemsSource="{Binding LogEntriesView}">
-
-                                    <DataGrid.Columns>
-
-                                        <DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp}" Width="150" SortMemberPath="Timestamp"/>
-
-                                        <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="80" SortMemberPath="Level"/>
-
-                                        <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*" SortMemberPath="Message"/>
-
-                                        <DataGridTextColumn Header="User" Binding="{Binding AdditionalData[user]}" Width="80" SortMemberPath="AdditionalData[user]"/>
-
-                                        <DataGridTextColumn Header="Session" Binding="{Binding AdditionalData[session]}" Width="80" SortMemberPath="AdditionalData[session]"/>
-
-                                    </DataGrid.Columns>
-
-                                </DataGrid>
+        <DataGrid ItemsSource="{Binding LogEntriesView}"
+                  behaviors:DataGridColumnsBehavior.BindableColumns="{Binding DisplayColumns}">
+        </DataGrid>
     </DockPanel>
 </Window>
