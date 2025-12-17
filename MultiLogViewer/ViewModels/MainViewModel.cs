@@ -32,10 +32,10 @@ namespace MultiLogViewer.ViewModels
         private readonly ILogFormatConfigLoader _logFormatConfigLoader;
         private readonly IFileResolver _fileResolver;
 
-        private readonly ObservableCollection<LogEntry> _logEntries = new();
+        private readonly ObservableCollection<LogEntry> _logEntries = new ObservableCollection<LogEntry>();
         public ICollectionView LogEntriesView { get; }
 
-        private ObservableCollection<DisplayColumnConfig> _displayColumns = new();
+        private ObservableCollection<DisplayColumnConfig> _displayColumns = new ObservableCollection<DisplayColumnConfig>();
         public ObservableCollection<DisplayColumnConfig> DisplayColumns
         {
             get => _displayColumns;
