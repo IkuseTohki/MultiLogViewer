@@ -9,16 +9,7 @@
         Title="Multi Log Viewer" Height="450" Width="800"
         Background="{StaticResource WindowBackgroundBrush}">
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="ファイル(_F)">
-                <MenuItem Header="開く(_O)" Command="{Binding OpenFileCommand}" />
-                <Separator />
-                <MenuItem Header="終了(_X)" Click="ExitMenuItem_Click" />
-            </MenuItem>
-            <MenuItem Header="設定(_S)">
-                <MenuItem Header="設定画面を開く" Click="OpenSettingsMenuItem_Click"/>
-            </MenuItem>
-        </Menu>
+
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5">
             <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,5,0"/>

@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 using System.IO;
-using System.Windows; // MessageBox を使用するため追加
+using System.Windows; // MessageBox
 
 namespace MultiLogViewer.Services
 {

@@ -67,6 +67,7 @@ namespace MultiLogViewer.Tests
                 _mockUserDialogService.Object,
                 _mockLogFormatConfigLoader.Object,
                 _mockFileResolver.Object);
+            _viewModel.Initialize("dummy_path");
 
             // Assert
             Assert.AreEqual(1, _viewModel.LogEntriesView.Cast<LogEntry>().Count());
@@ -92,6 +93,7 @@ namespace MultiLogViewer.Tests
                 _mockUserDialogService.Object,
                 _mockLogFormatConfigLoader.Object,
                 _mockFileResolver.Object);
+            _viewModel.Initialize("dummy_path");
 
             // Assert
             _mockUserDialogService.Verify(s => s.ShowError(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
