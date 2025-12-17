@@ -1,4 +1,3 @@
-using CommunityToolkit.Mvvm.ComponentModel;
 using MultiLogViewer.Models;
 using MultiLogViewer.Services;
 using System;
@@ -7,12 +6,27 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows.Data;
 
 namespace MultiLogViewer.ViewModels
 {
-    public partial class MainViewModel : ObservableObject
+    public class MainViewModel : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
         private readonly ILogFileReader _logFileReader;
         private readonly IUserDialogService _userDialogService;
         private readonly ILogFormatConfigLoader _logFormatConfigLoader;
@@ -21,8 +35,12 @@ namespace MultiLogViewer.ViewModels
         private readonly ObservableCollection<LogEntry> _logEntries = new();
         public ICollectionView LogEntriesView { get; }
 
-        [ObservableProperty]
         private ObservableCollection<DisplayColumnConfig> _displayColumns = new();
+        public ObservableCollection<DisplayColumnConfig> DisplayColumns
+        {
+            get => _displayColumns;
+            set => SetProperty(ref _displayColumns, value);
+        }
 
         private string _filterText = string.Empty;
         public string FilterText

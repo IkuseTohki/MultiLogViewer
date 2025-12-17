@@ -97,5 +97,63 @@ namespace MultiLogViewer.Tests
             _mockUserDialogService.Verify(s => s.ShowError(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             Assert.AreEqual(0, _viewModel.LogEntriesView.Cast<LogEntry>().Count());
         }
+
+        [TestMethod]
+        public void FilterText_WhenSet_RaisesPropertyChanged()
+        {
+            // Arrange
+            var appConfig = new AppConfig();
+            _mockLogFormatConfigLoader.Setup(l => l.Load(It.IsAny<string>())).Returns(appConfig);
+
+            _viewModel = new MainViewModel(
+                _mockLogFileReader.Object,
+                _mockUserDialogService.Object,
+                _mockLogFormatConfigLoader.Object,
+                _mockFileResolver.Object);
+
+            var propertyChangedFired = false;
+            _viewModel.PropertyChanged += (sender, e) =>
+            {
+                if (e.PropertyName == nameof(MainViewModel.FilterText))
+                {
+                    propertyChangedFired = true;
+                }
+            };
+
+            // Act
+            _viewModel.FilterText = "new filter";
+
+            // Assert
+            Assert.IsTrue(propertyChangedFired, "PropertyChanged event for FilterText was not raised.");
+        }
+
+        [TestMethod]
+        public void DisplayColumns_WhenSet_RaisesPropertyChanged()
+        {
+            // Arrange
+            var appConfig = new AppConfig();
+            _mockLogFormatConfigLoader.Setup(l => l.Load(It.IsAny<string>())).Returns(appConfig);
+
+            _viewModel = new MainViewModel(
+                _mockLogFileReader.Object,
+                _mockUserDialogService.Object,
+                _mockLogFormatConfigLoader.Object,
+                _mockFileResolver.Object);
+
+            var propertyChangedFired = false;
+            _viewModel.PropertyChanged += (sender, e) =>
+            {
+                if (e.PropertyName == nameof(MainViewModel.DisplayColumns))
+                {
+                    propertyChangedFired = true;
+                }
+            };
+
+            // Act
+            _viewModel.DisplayColumns = new ObservableCollection<DisplayColumnConfig>();
+
+            // Assert
+            Assert.IsTrue(propertyChangedFired, "PropertyChanged event for DisplayColumns was not raised.");
+        }
     }
 }
