@@ -31,32 +31,44 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type DataGridColumnHeader}">
-                    <Grid Background="{TemplateBinding Background}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ContentPresenter Grid.Column="0"
-                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
-                                          Content="{TemplateBinding Content}"
-                                          ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                          ContentTemplate="{TemplateBinding ContentTemplate}"
-                                          Margin="{TemplateBinding Padding}"/>
+                    <Grid>
+                        <Border BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}" />
 
-                        <!-- Sort Arrow -->
-                        <Path x:Name="SortArrow"
-                              Grid.Column="1"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"
-                              Width="8"
-                              Height="6"
-                              Margin="0,0,5,0"
-                              Stretch="Fill"
-                              Fill="{TemplateBinding Foreground}"
-                              RenderTransformOrigin="0.5,0.5"
-                              Visibility="Collapsed"/>
+                                <!-- Sort Arrow -->
+                                <Path x:Name="SortArrow"
+                                      Grid.Column="1"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      Width="8"
+                                      Height="6"
+                                      Margin="0,0,5,0"
+                                      Stretch="Fill"
+                                      Fill="{TemplateBinding Foreground}"
+                                      RenderTransformOrigin="0.5,0.5"
+                                      Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <!-- Resizing Thumb -->
+                        <Thumb x:Name="PART_RightHeaderGripper" 
+                               HorizontalAlignment="Right" 
+                               Cursor="SizeWE"
+                               Background="Transparent"
+                               Width="5" /> <!-- クリックしやすさのために幅を少し広げる -->
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="SortDirection" Value="Ascending">

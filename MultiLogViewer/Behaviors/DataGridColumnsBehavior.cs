@@ -74,7 +74,8 @@ namespace MultiLogViewer.Behaviors
                 var newColumn = new DataGridTextColumn
                 {
                     Header = columnConfig.Header,
-                    Width = new DataGridLength(columnConfig.Width),
+                    Width = new DataGridLength(columnConfig.Width), // config.yaml の幅を初期値として設定
+                    MinWidth = columnConfig.Width, // 最小幅も初期値と同じに設定
                     Binding = binding,
                     SortMemberPath = columnConfig.BindingPath
                 };
