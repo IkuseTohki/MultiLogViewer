@@ -29,7 +29,14 @@ namespace MultiLogViewer
             services.AddSingleton<IConfigPathResolver, ConfigPathResolver>();
 
             // ViewModels
-            services.AddTransient<MainViewModel>();
+            services.AddTransient(provider =>
+                new MainViewModel(
+                    provider.GetRequiredService<ILogFileReader>(),
+                    provider.GetRequiredService<IUserDialogService>(),
+                    provider.GetRequiredService<ILogFormatConfigLoader>(),
+                    provider.GetRequiredService<IFileResolver>(),
+                    provider.GetRequiredService<IConfigPathResolver>()));
+
 
             // Main Window
             services.AddSingleton<MainWindow>();

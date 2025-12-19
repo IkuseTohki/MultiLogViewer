@@ -66,7 +66,7 @@ namespace MultiLogViewer.Services
                     {
                         return System.Text.Encoding.GetEncoding(932); // コードページ932 (Shift-JIS) を試す
                     }
-                    catch (System.ArgumentException _)
+                    catch (System.ArgumentException)
                     {
                         return System.Text.Encoding.UTF8; // フォールバック
                     }
@@ -74,10 +74,11 @@ namespace MultiLogViewer.Services
 
                 try
                 {
-                    string charsetName = cdet.Charset.Replace('-', '_'); // ハイフンをアンダースコアに変換
+                    string detectedCharset = cdet.Charset; // ローカル変数に代入し、nullではないことを保証
+                    string charsetName = detectedCharset.Replace('-', '_'); // ハイフンをアンダースコアに変換
                     return System.Text.Encoding.GetEncoding(charsetName);
                 }
-                catch (System.ArgumentException _)
+                catch (System.ArgumentException)
                 {
                     // サポートされていないエンコーディングの場合はUTF8をフォールバック
                     return System.Text.Encoding.UTF8;

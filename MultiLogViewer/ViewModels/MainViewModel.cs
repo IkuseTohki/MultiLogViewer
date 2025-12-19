@@ -1,5 +1,6 @@
 using MultiLogViewer.Models;
 using MultiLogViewer.Services;
+using MultiLogViewer.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Data;
+using System.Windows.Input;
 
 namespace MultiLogViewer.ViewModels
 {
@@ -31,6 +33,9 @@ namespace MultiLogViewer.ViewModels
         private readonly IUserDialogService _userDialogService;
         private readonly ILogFormatConfigLoader _logFormatConfigLoader;
         private readonly IFileResolver _fileResolver;
+        private readonly IConfigPathResolver _configPathResolver;
+
+        private string _configPath = string.Empty;
 
         private readonly ObservableCollection<LogEntry> _logEntries = new ObservableCollection<LogEntry>();
         public ICollectionView LogEntriesView { get; }
@@ -55,19 +60,25 @@ namespace MultiLogViewer.ViewModels
             }
         }
 
+        public ICommand RefreshCommand { get; }
+
         public MainViewModel(
             ILogFileReader logFileReader,
             IUserDialogService userDialogService,
             ILogFormatConfigLoader logFormatConfigLoader,
-            IFileResolver fileResolver)
+            IFileResolver fileResolver,
+            IConfigPathResolver configPathResolver)
         {
             _logFileReader = logFileReader;
             _userDialogService = userDialogService;
             _logFormatConfigLoader = logFormatConfigLoader;
             _fileResolver = fileResolver;
+            _configPathResolver = configPathResolver;
 
             LogEntriesView = CollectionViewSource.GetDefaultView(_logEntries);
             LogEntriesView.Filter = FilterLogEntries;
+
+            RefreshCommand = new RelayCommand(_ => LoadLogs(_configPath));
         }
 
         /// <summary>
@@ -76,6 +87,14 @@ namespace MultiLogViewer.ViewModels
         /// <param name="configPath">設定ファイルのパス。</param>
         public void Initialize(string configPath)
         {
+            _configPath = configPath;
+            LoadLogs(_configPath);
+        }
+
+        private void LoadLogs(string configPath)
+        {
+            if (string.IsNullOrEmpty(configPath)) return;
+
             var appConfig = _logFormatConfigLoader.Load(configPath);
             if (appConfig == null)
             {
@@ -92,6 +111,7 @@ namespace MultiLogViewer.ViewModels
             // LogFormats からログを読み込む
             if (appConfig.LogFormats == null || !appConfig.LogFormats.Any())
             {
+                _logEntries.Clear(); // ログフォーマットがない場合はクリアする
                 return;
             }
 
