@@ -11,4 +11,3 @@ namespace MultiLogViewer.Models
         public List<SubPatternConfig> SubPatterns { get; set; } = new List<SubPatternConfig>();
     }
 }
-
