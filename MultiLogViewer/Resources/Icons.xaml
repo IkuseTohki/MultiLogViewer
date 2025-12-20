@@ -32,6 +32,9 @@
     <!-- Resize Handle (Two vertical bars) -->
     <Geometry x:Key="ResizeHandleIconGeometry">M8,5H10V19H8V5M14,5H16V19H14V5Z</Geometry>
 
+    <!-- Plus -->
+    <Geometry x:Key="PlusIconGeometry">M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z</Geometry>
+
     <!-- Multiline Icon (3 lines) -->
     <Geometry x:Key="MultilineIconGeometry">M3,7H21V9H3V7M3,11H21V13H3V11M3,15H21V17H3V15Z</Geometry>
 

@@ -1,5 +1,6 @@
 using MultiLogViewer.ViewModels;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace MultiLogViewer
 {
@@ -11,6 +12,15 @@ namespace MultiLogViewer
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void AddFilterButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.ContextMenu != null)
+            {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.IsOpen = true;
+            }
         }
     }
 }

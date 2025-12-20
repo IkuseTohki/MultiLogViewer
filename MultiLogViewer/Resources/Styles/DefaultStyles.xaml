@@ -147,4 +147,31 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Badge (Pill) Style -->
+    <Style x:Key="BadgeContainerStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PrimaryHueLightBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PrimaryHueMidBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="8,2" />
+        <Setter Property="Margin" Value="0,0,5,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="BadgeTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Small Close Button for Badge -->
+    <Style x:Key="BadgeCloseButtonStyle"
+           BasedOn="{StaticResource IconButtonStyle}"
+           TargetType="Button">
+        <Setter Property="Width" Value="14" />
+        <Setter Property="Height" Value="14" />
+        <Setter Property="Margin" Value="5,0,0,0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
 </ResourceDictionary>

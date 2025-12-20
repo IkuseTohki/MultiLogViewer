@@ -22,5 +22,13 @@ namespace MultiLogViewer.Services
         /// 全ヒット数と、現在の選択位置が何番目のヒットかを取得します。
         /// </summary>
         (int matchCount, int currentIndex) GetSearchStatistics(IEnumerable<LogEntry> entries, LogEntry? currentSelection, SearchCriteria criteria);
+
+        /// <summary>
+        /// 指定されたフィルターに基づいて、そのログエントリを非表示にすべきかどうかを判定します。
+        /// </summary>
+        /// <param name="entry">判定対象のログエントリ。</param>
+        /// <param name="filters">適用されている拡張フィルターの一覧。</param>
+        /// <returns>非表示にすべきなら true、そうでなければ false。</returns>
+        bool ShouldHide(LogEntry entry, IEnumerable<LogFilter> filters);
     }
 }

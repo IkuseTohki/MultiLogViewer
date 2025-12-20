@@ -80,6 +80,15 @@ namespace MultiLogViewer.ViewModels
         public ICommand OpenSearchCommand { get; }
         public ICommand CopyCommand { get; }
         public ICommand ToggleDetailPanelCommand { get; }
+        public ICommand AddExtensionFilterCommand { get; }
+        public ICommand AddDateTimeFilterCommand { get; }
+        public ICommand RemoveExtensionFilterCommand { get; }
+
+        private ObservableCollection<LogFilter> _activeExtensionFilters = new ObservableCollection<LogFilter>();
+        public ObservableCollection<LogFilter> ActiveExtensionFilters => _activeExtensionFilters;
+
+        private ObservableCollection<string> _availableAdditionalDataKeys = new ObservableCollection<string>();
+        public ObservableCollection<string> AvailableAdditionalDataKeys => _availableAdditionalDataKeys;
 
         public MainViewModel(
             ILogService logService,
@@ -103,6 +112,57 @@ namespace MultiLogViewer.ViewModels
             OpenSearchCommand = new RelayCommand(_ => OpenSearch());
             CopyCommand = new RelayCommand(_ => CopySelectedLogEntry());
             ToggleDetailPanelCommand = new RelayCommand(_ => IsDetailPanelVisible = !IsDetailPanelVisible);
+            AddExtensionFilterCommand = new RelayCommand(param => AddExtensionFilter(param as string));
+            AddDateTimeFilterCommand = new RelayCommand(param => AddDateTimeFilter(param));
+            RemoveExtensionFilterCommand = new RelayCommand(param => RemoveExtensionFilter(param as LogFilter));
+
+            _activeExtensionFilters.CollectionChanged += (s, e) => LogEntriesView.Refresh();
+        }
+
+        private void AddExtensionFilter(string? key)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+            var newFilter = new LogFilter(FilterType.ColumnEmpty, key, default, key);
+
+            // 既存にあれば削除（重複追加防止・上書き）
+            if (_activeExtensionFilters.Contains(newFilter))
+            {
+                _activeExtensionFilters.Remove(newFilter);
+            }
+            _activeExtensionFilters.Add(newFilter);
+        }
+
+        private void AddDateTimeFilter(object? param)
+        {
+            // param: (DateTime value, bool isAfter)
+            if (param is ValueTuple<DateTime, bool> data)
+            {
+                var (value, isAfter) = data;
+                var type = isAfter ? FilterType.DateTimeAfter : FilterType.DateTimeBefore;
+                var suffix = isAfter ? "以降" : "以前";
+
+                // 表示用テキストの生成。Timestamp列の設定があればそれを使う
+                var timestampConfig = DisplayColumns.FirstOrDefault(c => c.BindingPath == "Timestamp");
+                var format = timestampConfig?.StringFormat ?? "yyyy/MM/dd HH:mm:ss";
+                var formattedDate = value.ToString(format);
+                var displayText = $"\"{formattedDate}\"{suffix}";
+
+                var newFilter = new LogFilter(type, "", value, displayText);
+
+                // 同一タイプの既存フィルター（以降/以前それぞれ一つずつ）があれば削除して上書き
+                var existing = _activeExtensionFilters.FirstOrDefault(f => f.Type == type);
+                if (existing != null)
+                {
+                    _activeExtensionFilters.Remove(existing);
+                }
+                _activeExtensionFilters.Add(newFilter);
+            }
+        }
+
+        private void RemoveExtensionFilter(LogFilter? filter)
+        {
+            if (filter == null) return;
+            _activeExtensionFilters.Remove(filter);
         }
 
         private void CopySelectedLogEntry()
@@ -251,9 +311,24 @@ namespace MultiLogViewer.ViewModels
 
             // エントリをコレクションに追加
             _logEntries.Clear();
+            var allKeys = new HashSet<string>();
             foreach (var entry in result.Entries)
             {
                 _logEntries.Add(entry);
+                if (entry.AdditionalData != null)
+                {
+                    foreach (var key in entry.AdditionalData.Keys)
+                    {
+                        allKeys.Add(key);
+                    }
+                }
+            }
+
+            // 利用可能なキー一覧を更新
+            _availableAdditionalDataKeys.Clear();
+            foreach (var key in allKeys.OrderBy(k => k))
+            {
+                _availableAdditionalDataKeys.Add(key);
             }
 
             LogEntriesView.Refresh();
@@ -263,6 +338,13 @@ namespace MultiLogViewer.ViewModels
         {
             if (obj is LogEntry entry)
             {
+                // 拡張フィルターによる非表示判定
+                if (_logSearchService.ShouldHide(entry, _activeExtensionFilters))
+                {
+                    return false;
+                }
+
+                // キーワードフィルタによる判定
                 if (string.IsNullOrWhiteSpace(FilterText))
                 {
                     return true;

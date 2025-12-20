@@ -54,48 +54,103 @@
 
         <StackPanel Margin="5"
                     DockPanel.Dock="Top"
-                    Orientation="Horizontal">
-            <Border Background="White"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="4">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="200" />
-                    </Grid.ColumnDefinitions>
-                    <Path Grid.Column="0"
-                          Width="12"
-                          Height="12"
-                          Margin="5,0,0,0"
-                          VerticalAlignment="Center"
-                          Data="{StaticResource FilterIconGeometry}"
-                          Fill="Gray"
-                          Stretch="Uniform" />
-                    <TextBox Grid.Column="1"
-                             Margin="0"
-                             Padding="2,0"
-                             VerticalContentAlignment="Center"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
-                </Grid>
-            </Border>
-            <Button Width="24"
-                    Height="24"
-                    Margin="10,0,0,0"
-                    VerticalAlignment="Center"
-                    Command="{Binding RefreshCommand}"
-                    Style="{StaticResource IconButtonStyle}"
-                    ToolTip="Refresh logs from config">
-                <Path Width="16"
-                      Height="16"
-                      Data="{StaticResource RefreshIconGeometry}"
-                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                      Stretch="Uniform" />
-            </Button>
-        </StackPanel>
+                    Orientation="Vertical">
+            <StackPanel Orientation="Horizontal">
+                <Border Background="White"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="200" />
+                        </Grid.ColumnDefinitions>
 
+                        <!-- Filter Icon as a Button -->
+                        <Button Grid.Column="0"
+                                Width="24"
+                                Height="24"
+                                Click="AddFilterButton_Click"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip="拡張フィルターを追加">
+                            <Button.ContextMenu>
+                                <ContextMenu x:Name="AvailableKeysMenu" ItemsSource="{Binding AvailableAdditionalDataKeys}">
+                                    <ContextMenu.ItemContainerStyle>
+                                        <Style TargetType="MenuItem">
+                                            <Setter Property="Header" Value="{Binding}" />
+                                            <Setter Property="Command" Value="{Binding DataContext.AddExtensionFilterCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <Setter Property="CommandParameter" Value="{Binding}" />
+                                        </Style>
+                                    </ContextMenu.ItemContainerStyle>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                            <Path Width="12"
+                                  Height="12"
+                                  Data="{StaticResource FilterIconGeometry}"
+                                  Fill="Gray"
+                                  Stretch="Uniform" />
+                        </Button>
+                        <TextBox Grid.Column="1"
+                                 Margin="0"
+                                 Padding="2,0"
+                                 VerticalContentAlignment="Center"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </Border>
+                <Button Width="24"
+                        Height="24"
+                        Margin="10,0,0,0"
+                        VerticalAlignment="Center"
+                        Command="{Binding RefreshCommand}"
+                        Style="{StaticResource IconButtonStyle}"
+                        ToolTip="Refresh logs from config">
+                    <Path Width="16"
+                          Height="16"
+                          Data="{StaticResource RefreshIconGeometry}"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform" />
+                </Button>
+            </StackPanel>
+
+            <!-- Active Extension Filters (Badges) -->
+            <ItemsControl Margin="0,5,0,0" ItemsSource="{Binding ActiveExtensionFilters}">
+                <ItemsControl.Style>
+                    <Style TargetType="ItemsControl">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActiveExtensionFilters.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ItemsControl.Style>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,5,5" Style="{StaticResource BadgeContainerStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource BadgeTextStyle}" Text="{Binding DisplayText}" />
+                                <Button Command="{Binding DataContext.RemoveExtensionFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource BadgeCloseButtonStyle}">
+                                    <Path Width="6"
+                                          Height="6"
+                                          Data="{StaticResource CloseIconGeometry}"
+                                          Fill="{StaticResource SecondaryTextBrush}"
+                                          Stretch="Uniform" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />

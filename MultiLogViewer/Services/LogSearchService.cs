@@ -91,5 +91,42 @@ namespace MultiLogViewer.Services
 
             return (matchCount, selectionFound ? currentIndex : 0);
         }
+
+        public bool ShouldHide(LogEntry entry, IEnumerable<LogFilter> filters)
+        {
+            if (filters == null || !filters.Any()) return false;
+
+            // 1. カラムフィルター（空チェック）の判定
+            // 全ての指定項目が空の場合にのみ非表示とするため、項目を抽出して一括判定する
+            var columnKeys = filters.Where(f => f.Type == FilterType.ColumnEmpty).Select(f => f.Key).ToList();
+            if (columnKeys.Any())
+            {
+                bool allEmpty = true;
+                foreach (var key in columnKeys)
+                {
+                    if (entry.AdditionalData.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                    {
+                        allEmpty = false;
+                        break;
+                    }
+                }
+                if (allEmpty) return true; // 全て空なので非表示
+            }
+
+            // 2. 日時フィルターの判定
+            foreach (var filter in filters)
+            {
+                if (filter.Type == FilterType.DateTimeAfter)
+                {
+                    if (entry.Timestamp < filter.Value) return true; // 指定より前なので非表示
+                }
+                else if (filter.Type == FilterType.DateTimeBefore)
+                {
+                    if (entry.Timestamp > filter.Value) return true; // 指定より後なので非表示
+                }
+            }
+
+            return false;
+        }
     }
 }

@@ -77,6 +77,70 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
+        public void AddExtensionFilterCommand_AddsKeyAndRefreshesView()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            var logs = new List<LogEntry>
+            {
+                new LogEntry { Message = "Entry with Value", AdditionalData = new Dictionary<string, string> { { "Level", "INFO" } } },
+                new LogEntry { Message = "Entry without Value", AdditionalData = new Dictionary<string, string> { { "Level", "" } } }
+            };
+            SetLogsToViewModel(_viewModel, logs);
+
+            // Act
+            _viewModel.AddExtensionFilterCommand.Execute("Level");
+
+            // Assert
+            Assert.IsTrue(_viewModel.ActiveExtensionFilters.Any(f => f.Key == "Level"));
+            var view = _viewModel.LogEntriesView.Cast<LogEntry>().ToList();
+            Assert.AreEqual(1, view.Count, "Should hide the entry where 'Level' is empty.");
+            Assert.AreEqual("Entry with Value", view[0].Message);
+        }
+
+        [TestMethod]
+        public void RemoveExtensionFilterCommand_RemovesKeyAndRefreshesView()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            var logs = new List<LogEntry>
+            {
+                new LogEntry { Message = "Empty", AdditionalData = new Dictionary<string, string> { { "Level", "" } } }
+            };
+            SetLogsToViewModel(_viewModel, logs);
+            _viewModel.AddExtensionFilterCommand.Execute("Level");
+            Assert.AreEqual(0, _viewModel.LogEntriesView.Cast<LogEntry>().Count());
+
+            var filter = _viewModel.ActiveExtensionFilters.First();
+
+            // Act
+            _viewModel.RemoveExtensionFilterCommand.Execute(filter);
+
+            // Assert
+            Assert.IsFalse(_viewModel.ActiveExtensionFilters.Contains(filter));
+            Assert.AreEqual(1, _viewModel.LogEntriesView.Cast<LogEntry>().Count(), "Should show the entry after filter is removed.");
+        }
+
+        [TestMethod]
+        public void LoadLogs_PopulatesAvailableAdditionalDataKeys()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            var logs = new List<LogEntry>
+            {
+                new LogEntry { AdditionalData = new Dictionary<string, string> { { "User", "A" }, { "Level", "INFO" } } },
+                new LogEntry { AdditionalData = new Dictionary<string, string> { { "Tag", "T1" }, { "Level", "DEBUG" } } }
+            };
+            SetLogsToViewModel(_viewModel, logs);
+
+            // Assert
+            Assert.AreEqual(3, _viewModel.AvailableAdditionalDataKeys.Count);
+            CollectionAssert.Contains(_viewModel.AvailableAdditionalDataKeys.ToList(), "User");
+            CollectionAssert.Contains(_viewModel.AvailableAdditionalDataKeys.ToList(), "Level");
+            CollectionAssert.Contains(_viewModel.AvailableAdditionalDataKeys.ToList(), "Tag");
+        }
+
+        [TestMethod]
         public void Initialize_Successful_LoadsLogsAndColumns()
         {
             // Arrange
