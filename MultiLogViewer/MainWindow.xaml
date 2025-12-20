@@ -1,65 +1,207 @@
-<Window x:Class="MultiLogViewer.MainWindow"
+﻿<Window x:Class="MultiLogViewer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MultiLogViewer"
         xmlns:behaviors="clr-namespace:MultiLogViewer.Behaviors"
-        mc:Ignorable="d"
-        Title="Multi Log Viewer" Height="450" Width="800"
-        Background="{StaticResource WindowBackgroundBrush}">
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:MultiLogViewer"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Title="Multi Log Viewer"
+        Width="800"
+        Height="450"
+        Background="{StaticResource WindowBackgroundBrush}"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
     <DockPanel>
 
         <DockPanel.InputBindings>
-            <KeyBinding Key="F" Modifiers="Control" Command="{Binding OpenSearchCommand}"/>
-            <KeyBinding Key="C" Modifiers="Control" Command="{Binding CopyCommand}"/>
+            <KeyBinding Key="F"
+                        Command="{Binding OpenSearchCommand}"
+                        Modifiers="Control" />
+            <KeyBinding Key="C"
+                        Command="{Binding CopyCommand}"
+                        Modifiers="Control" />
         </DockPanel.InputBindings>
 
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5">
-            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4" Background="White">
+        <StackPanel Margin="5"
+                    DockPanel.Dock="Top"
+                    Orientation="Horizontal">
+            <Border Background="White"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="200" />
                     </Grid.ColumnDefinitions>
-                    <Path Grid.Column="0" 
-                          Data="{StaticResource FilterIconGeometry}" 
-                          Fill="Gray" 
-                          Stretch="Uniform" 
-                          Width="12" 
-                          Height="12" 
-                          VerticalAlignment="Center" 
-                          Margin="5,0,0,0"/>
-                    <TextBox Grid.Column="1" 
-                             Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" 
-                             BorderThickness="0"
-                             Background="Transparent"
-                             VerticalContentAlignment="Center"
+                    <Path Grid.Column="0"
+                          Width="12"
+                          Height="12"
+                          Margin="5,0,0,0"
+                          VerticalAlignment="Center"
+                          Data="{StaticResource FilterIconGeometry}"
+                          Fill="Gray"
+                          Stretch="Uniform" />
+                    <TextBox Grid.Column="1"
+                             Margin="0"
                              Padding="2,0"
-                             Margin="0"/>
+                             VerticalContentAlignment="Center"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
             </Border>
-            <Button Command="{Binding RefreshCommand}" 
-                    ToolTip="Refresh logs from config"
-                    Margin="10,0,0,0" 
-                    VerticalAlignment="Center" 
-                    Width="24" 
+            <Button Width="24"
                     Height="24"
-                    Style="{StaticResource IconButtonStyle}">
-                <Path Data="{StaticResource RefreshIconGeometry}" 
-                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" 
-                      Stretch="Uniform"
-                      Width="16"
-                      Height="16"/>
+                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    Command="{Binding RefreshCommand}"
+                    Style="{StaticResource IconButtonStyle}"
+                    ToolTip="Refresh logs from config">
+                <Path Width="16"
+                      Height="16"
+                      Data="{StaticResource RefreshIconGeometry}"
+                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      Stretch="Uniform" />
             </Button>
         </StackPanel>
 
-        <DataGrid ItemsSource="{Binding LogEntriesView}"
-                  SelectedItem="{Binding SelectedLogEntry, Mode=TwoWay}"
-                  behaviors:DataGridScrollToSelectionBehavior.SelectedItem="{Binding SelectedLogEntry}"
-                  CanUserResizeColumns="True"
-                  CanUserReorderColumns="True"
-                  behaviors:DataGridColumnsBehavior.BindableColumns="{Binding DisplayColumns}">
-        </DataGrid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto">
+                    <ColumnDefinition.Style>
+                        <Style TargetType="ColumnDefinition">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDetailPanelVisible}" Value="False">
+                                    <Setter Property="Width" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ColumnDefinition.Style>
+                </ColumnDefinition>
+                <ColumnDefinition>
+                    <ColumnDefinition.Style>
+                        <Style TargetType="ColumnDefinition">
+                            <Setter Property="Width" Value="{Binding DetailPanelWidth, Mode=TwoWay}" />
+                            <Setter Property="MinWidth" Value="100" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDetailPanelVisible}" Value="False">
+                                    <Setter Property="Width" Value="0" />
+                                    <Setter Property="MinWidth" Value="0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ColumnDefinition.Style>
+                </ColumnDefinition>
+            </Grid.ColumnDefinitions>
+
+            <!-- Log DataGrid Container -->
+            <Grid Grid.Column="0">
+                <DataGrid behaviors:DataGridColumnsBehavior.BindableColumns="{Binding DisplayColumns}"
+                          behaviors:DataGridScrollToSelectionBehavior.SelectedItem="{Binding SelectedLogEntry}"
+                          CanUserReorderColumns="True"
+                          CanUserResizeColumns="True"
+                          ItemsSource="{Binding LogEntriesView}"
+                          SelectedItem="{Binding SelectedLogEntry, Mode=TwoWay}" />
+
+                <!-- Floating Toggle Button -->
+                <Button Width="16"
+                        Height="32"
+                        Margin="0,0,-8,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Panel.ZIndex="100"
+                        Background="{StaticResource WindowBackgroundBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        Command="{Binding ToggleDetailPanelCommand}">
+                    <Button.Style>
+                        <Style BasedOn="{StaticResource IconButtonStyle}" TargetType="Button">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDetailPanelVisible}" Value="False">
+                                    <Setter Property="Margin" Value="0,0,0,0" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Path Width="8"
+                          Height="8"
+                          Fill="{StaticResource PrimaryTextBrush}"
+                          Stretch="Uniform">
+                        <Path.Style>
+                            <Style TargetType="Path">
+                                <Setter Property="Data" Value="{StaticResource ChevronLeftIconGeometry}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDetailPanelVisible}" Value="True">
+                                        <Setter Property="Data" Value="{StaticResource ChevronRightIconGeometry}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Path.Style>
+                    </Path>
+                </Button>
+            </Grid>
+
+            <!-- Splitter: Must be a direct child of the main Grid -->
+            <GridSplitter Grid.Column="1"
+                          Width="4"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Background="Transparent"
+                          ResizeBehavior="PreviousAndNext" />
+
+            <!-- Detail Panel -->
+            <Border Grid.Column="2"
+                    Background="{StaticResource ControlBackgroundBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1,0,0,0"
+                    Visibility="{Binding IsDetailPanelVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <TextBlock Margin="0,0,0,10"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource PrimaryHueMidBrush}"
+                                   Text="Log Details" />
+
+                        <TextBlock Margin="0,5,0,2"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="Gray"
+                                   Text="Full Path:" />
+                        <TextBox Background="Transparent"
+                                 BorderThickness="0"
+                                 IsReadOnly="True"
+                                 Text="{Binding SelectedLogEntry.FileFullPath, Mode=OneWay}"
+                                 TextWrapping="Wrap" />
+
+                        <TextBlock Margin="0,15,0,2"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="Gray"
+                                   Text="Line Number:" />
+                        <TextBox Background="Transparent"
+                                 BorderThickness="0"
+                                 IsReadOnly="True"
+                                 Text="{Binding SelectedLogEntry.LineNumber, Mode=OneWay}" />
+
+                        <TextBlock Margin="0,15,0,2"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="Gray"
+                                   Text="Raw Log Line:" />
+                        <TextBox Background="Transparent"
+                                 BorderThickness="0"
+                                 FontFamily="Consolas, Monospace"
+                                 IsReadOnly="True"
+                                 Text="{Binding SelectedLogEntry.RawLine, Mode=OneWay}"
+                                 TextWrapping="Wrap" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
     </DockPanel>
 </Window>

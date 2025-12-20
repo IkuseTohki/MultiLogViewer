@@ -39,6 +39,8 @@ namespace MultiLogViewer.Services
                         var entry = parser.Parse(line, fileName, lineNumber); // ファイル名と行番号を渡す
                         if (entry != null)
                         {
+                            entry.RawLine = line; // パース前の行を保持
+                            entry.FileFullPath = filePath; // フルパスを設定
                             yield return entry;
                         }
                     }

@@ -42,6 +42,20 @@ namespace MultiLogViewer.ViewModels
 
         private SearchViewModel? _searchViewModel;
 
+        private bool _isDetailPanelVisible = true;
+        public bool IsDetailPanelVisible
+        {
+            get => _isDetailPanelVisible;
+            set => SetProperty(ref _isDetailPanelVisible, value);
+        }
+
+        private double _detailPanelWidth = 300;
+        public double DetailPanelWidth
+        {
+            get => _detailPanelWidth;
+            set => SetProperty(ref _detailPanelWidth, value);
+        }
+
         private ObservableCollection<DisplayColumnConfig> _displayColumns = new ObservableCollection<DisplayColumnConfig>();
         public ObservableCollection<DisplayColumnConfig> DisplayColumns
         {
@@ -65,6 +79,7 @@ namespace MultiLogViewer.ViewModels
         public ICommand RefreshCommand { get; }
         public ICommand OpenSearchCommand { get; }
         public ICommand CopyCommand { get; }
+        public ICommand ToggleDetailPanelCommand { get; }
 
         public MainViewModel(
             ILogService logService,
@@ -87,6 +102,7 @@ namespace MultiLogViewer.ViewModels
             RefreshCommand = new RelayCommand(_ => LoadLogs(_configPath));
             OpenSearchCommand = new RelayCommand(_ => OpenSearch());
             CopyCommand = new RelayCommand(_ => CopySelectedLogEntry());
+            ToggleDetailPanelCommand = new RelayCommand(_ => IsDetailPanelVisible = !IsDetailPanelVisible);
         }
 
         private void CopySelectedLogEntry()
