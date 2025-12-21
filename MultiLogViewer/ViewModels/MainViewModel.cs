@@ -349,45 +349,49 @@ namespace MultiLogViewer.ViewModels
         {
             if (string.IsNullOrEmpty(configPath)) return;
 
-            var result = _logService.LoadFromConfig(configPath);
-
-            _fileStates = result.FileStates;
-            _pollingIntervalMs = result.PollingIntervalMs;
-            _tailTimer.Interval = TimeSpan.FromMilliseconds(_pollingIntervalMs);
-
-            // ログエントリがない場合にエラーを表示する（以前の仕様を維持）
-            // 注意: appConfigがnullの場合のハンドリングをService内で行っているため、
-            // ここでは結果が空かどうかで判断します。
-
-            // DisplayColumns を設定
-            if (result.DisplayColumns != null && result.DisplayColumns.Any())
+            try
             {
-                DisplayColumns = new ObservableCollection<DisplayColumnConfig>(result.DisplayColumns);
-            }
+                var result = _logService.LoadFromConfig(configPath);
 
-            // エントリをコレクションに追加
-            _logEntries.Clear();
-            var allKeys = new HashSet<string>();
-            foreach (var entry in result.Entries)
-            {
-                _logEntries.Add(entry);
-                if (entry.AdditionalData != null)
+                _fileStates = result.FileStates;
+                _pollingIntervalMs = result.PollingIntervalMs;
+                _tailTimer.Interval = TimeSpan.FromMilliseconds(_pollingIntervalMs);
+
+                // DisplayColumns を設定
+                if (result.DisplayColumns != null && result.DisplayColumns.Any())
                 {
-                    foreach (var key in entry.AdditionalData.Keys)
+                    DisplayColumns = new ObservableCollection<DisplayColumnConfig>(result.DisplayColumns);
+                }
+
+                // エントリをコレクションに追加
+                _logEntries.Clear();
+                var allKeys = new HashSet<string>();
+                foreach (var entry in result.Entries)
+                {
+                    _logEntries.Add(entry);
+                    if (entry.AdditionalData != null)
                     {
-                        allKeys.Add(key);
+                        foreach (var key in entry.AdditionalData.Keys)
+                        {
+                            allKeys.Add(key);
+                        }
                     }
                 }
-            }
 
-            // 利用可能なキー一覧を更新
-            _availableAdditionalDataKeys.Clear();
-            foreach (var key in allKeys.OrderBy(k => k))
+                // 利用可能なキー一覧を更新
+                _availableAdditionalDataKeys.Clear();
+                foreach (var key in allKeys.OrderBy(k => k))
+                {
+                    _availableAdditionalDataKeys.Add(key);
+                }
+
+                LogEntriesView.Refresh();
+            }
+            catch (System.Exception ex)
             {
-                _availableAdditionalDataKeys.Add(key);
+                // 設定読み込みエラーをユーザーに通知
+                _userDialogService.ShowError("設定エラー", ex.Message);
             }
-
-            LogEntriesView.Refresh();
         }
 
         private bool FilterLogEntries(object obj)

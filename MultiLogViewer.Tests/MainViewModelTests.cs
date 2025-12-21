@@ -179,6 +179,23 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
+        public void LoadLogs_ShowsErrorDialog_WhenExceptionOccurs()
+        {
+            // Arrange
+            var errorMessage = "Invalid YAML format";
+            _mockLogService.Setup(s => s.LoadFromConfig(It.IsAny<string>()))
+                .Throws(new System.Exception(errorMessage));
+
+            _viewModel = CreateViewModel();
+
+            // Act
+            _viewModel.Initialize("invalid_config.yaml");
+
+            // Assert
+            _mockUserDialogService.Verify(s => s.ShowError("設定エラー", errorMessage), Times.Once);
+        }
+
+        [TestMethod]
         public void FilterText_WhenSet_RaisesPropertyChanged()
         {
             // Arrange

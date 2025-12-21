@@ -22,7 +22,7 @@ namespace MultiLogViewer.Services
             return null;
         }
 
-        public void ShowError(string message, string title)
+        public void ShowError(string title, string message)
         {
             MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
         }
