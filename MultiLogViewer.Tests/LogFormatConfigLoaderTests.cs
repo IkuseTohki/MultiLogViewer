@@ -71,5 +71,42 @@ namespace MultiLogViewer.Tests
             Assert.IsNotNull(config.DisplayColumns);
             Assert.AreEqual(0, config.DisplayColumns.Count);
         }
+
+        /// <summary>
+        /// テスト観点: TestConfigs/style_config.yaml ファイルから column_styles が正しく読み込まれることを確認する。
+        /// </summary>
+        [TestMethod]
+        public void LoadConfig_StyleConfig_ReturnsColumnStyles()
+        {
+            // Arrange
+            var configPath = "TestConfigs/style_config.yaml";
+            var loader = new LogFormatConfigLoader();
+
+            // Act
+            var config = loader.Load(configPath);
+
+            // Assert
+            Assert.IsNotNull(config);
+            Assert.IsNotNull(config.ColumnStyles);
+            Assert.AreEqual(2, config.ColumnStyles.Count);
+
+            // Level カラムのスタイル検証
+            var levelStyle = config.ColumnStyles.FirstOrDefault(c => c.ColumnHeader == "Level");
+            Assert.IsNotNull(levelStyle);
+            Assert.IsFalse(levelStyle.SemanticColoring);
+            Assert.AreEqual(2, levelStyle.Rules.Count);
+
+            var errorRule = levelStyle.Rules[0];
+            Assert.AreEqual("^(ERROR|FATAL)$", errorRule.Pattern);
+            Assert.AreEqual("White", errorRule.Foreground);
+            Assert.AreEqual("#D32F2F", errorRule.Background);
+            Assert.AreEqual("Bold", errorRule.FontWeight);
+
+            // User カラムのスタイル検証
+            var userStyle = config.ColumnStyles.FirstOrDefault(c => c.ColumnHeader == "User");
+            Assert.IsNotNull(userStyle);
+            Assert.IsTrue(userStyle.SemanticColoring);
+            Assert.AreEqual(0, userStyle.Rules.Count);
+        }
     }
 }

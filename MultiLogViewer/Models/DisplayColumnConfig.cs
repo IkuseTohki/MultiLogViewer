@@ -1,3 +1,5 @@
+using YamlDotNet.Serialization;
+
 namespace MultiLogViewer.Models
 {
     public class DisplayColumnConfig
@@ -6,5 +8,8 @@ namespace MultiLogViewer.Models
         public string BindingPath { get; set; } = string.Empty; // 例: Timestamp, Level, Message, AdditionalData[Key]
         public int Width { get; set; } = 100;
         public string? StringFormat { get; set; }
+
+        [YamlIgnore]
+        public ColumnStyleConfig? StyleConfig { get; set; }
     }
 }

@@ -1,0 +1,20 @@
+polling_interval_ms: 1000
+display_columns:
+  - header: "Level"
+    binding_path: "AdditionalData[level]"
+  - header: "User"
+    binding_path: "AdditionalData[user]"
+
+column_styles:
+  - column_header: "Level"
+    rules:
+      - pattern: "^(ERROR|FATAL)$"
+        foreground: "White"
+        background: "#D32F2F"
+        font_weight: "Bold"
+      - pattern: "^WARN"
+        background: "#FFC107"
+  - column_header: "User"
+    semantic_coloring: true
+
+log_formats: []

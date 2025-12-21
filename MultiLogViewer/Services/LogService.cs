@@ -51,6 +51,19 @@ namespace MultiLogViewer.Services
             var sortedEntries = allEntries.OrderBy(e => e.Timestamp).ToList();
             var displayColumns = appConfig.DisplayColumns?.ToList() ?? new List<DisplayColumnConfig>();
 
+            // ColumnStyles を DisplayColumns に紐付け
+            if (appConfig.ColumnStyles != null && displayColumns.Any())
+            {
+                foreach (var col in displayColumns)
+                {
+                    var style = appConfig.ColumnStyles.FirstOrDefault(s => s.ColumnHeader == col.Header);
+                    if (style != null)
+                    {
+                        col.StyleConfig = style;
+                    }
+                }
+            }
+
             return new LogDataResult(sortedEntries, displayColumns, fileStates, appConfig.PollingIntervalMs);
         }
 

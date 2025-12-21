@@ -1,6 +1,9 @@
 # MultiLogViewer Configuration Template
 # ------------------------------------
 
+# 監視の更新間隔（ミリ秒）
+polling_interval_ms: 1000
+
 # 画面に表示する列の設定
 display_columns:
   - { header: "Timestamp", binding_path: "Timestamp", width: 180, string_format: "yyyy/MM/dd HH:mm:ss.fff" }
@@ -9,20 +12,39 @@ display_columns:
   - { header: "File", binding_path: "FileName", width: 150 }
   - { header: "Line", binding_path: "LineNumber", width: 60 }
 
+# カラムごとのスタイル設定 (ハイライト & セマンティック・カラーリング)
+column_styles:
+  - column_header: "Level"
+    rules:
+      - pattern: 'ERROR|❌ ERROR'
+        foreground: "White"
+        background: "#D32F2F" # Red
+        font_weight: "Bold"
+      - pattern: 'WARN|⚠ WARN'
+        foreground: "Black"
+        background: "#FFF9C4" # Light Yellow
+  - column_header: "User"
+    semantic_coloring: true
+
 # ログファイルの読み込みルール
 log_formats:
   - name: "SampleLog"
     log_file_patterns:
       - "sample.log"
     # 例: 2023-12-20 10:00:00 [INFO] メッセージ
-    pattern: "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}" \[(?<level>\\w+)\] (?<message>.*)$"
+    pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}" \[(?<level>\\w+)\] (?<message>.*)$'
     timestamp_format: "yyyy-MM-dd HH:mm:ss"
     is_multiline: true
-    
-    # 表示のカスタマイズ例
+
+    # 表示の変換例
     field_transforms:
       - field: "level"
         map:
           "INFO": "ℹ INFO"
           "WARN": "⚠ WARN"
           "ERROR": "❌ ERROR"
+
+    # 詳細なパース例 (message内から追加情報を抽出)
+    sub_patterns:
+      - source_field: "message"
+        pattern: 'user=(?<user>\w+)'

@@ -1,10 +1,13 @@
 using MultiLogViewer.Models;
+using MultiLogViewer.ViewModels.Converters;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 
 namespace MultiLogViewer.Behaviors
 {
@@ -89,6 +92,39 @@ namespace MultiLogViewer.Behaviors
                     newColumn = CreateTextColumn(columnConfig);
                 }
 
+                // --- スタイル設定 (CellStyle) ---
+                if (columnConfig.StyleConfig != null)
+                {
+                    // 既存のCellStyleがあればそれをベースにする（Timestamp列で作成済みの場合など）
+                    var cellStyle = newColumn.CellStyle ?? new Style(typeof(DataGridCell));
+
+                    // Background
+                    var bgBinding = new Binding(columnConfig.BindingPath)
+                    {
+                        Converter = new CellStyleConverter { StyleConfig = columnConfig.StyleConfig },
+                        ConverterParameter = "Background"
+                    };
+                    cellStyle.Setters.Add(new Setter(DataGridCell.BackgroundProperty, bgBinding));
+
+                    // Foreground
+                    var fgBinding = new Binding(columnConfig.BindingPath)
+                    {
+                        Converter = new CellStyleConverter { StyleConfig = columnConfig.StyleConfig },
+                        ConverterParameter = "Foreground"
+                    };
+                    cellStyle.Setters.Add(new Setter(DataGridCell.ForegroundProperty, fgBinding));
+
+                    // FontWeight
+                    var fwBinding = new Binding(columnConfig.BindingPath)
+                    {
+                        Converter = new CellStyleConverter { StyleConfig = columnConfig.StyleConfig },
+                        ConverterParameter = "FontWeight"
+                    };
+                    cellStyle.Setters.Add(new Setter(DataGridCell.FontWeightProperty, fwBinding));
+
+                    newColumn.CellStyle = cellStyle;
+                }
+
                 // --- ヘッダーメニューの設定 (カラムフィルター) ---
                 var keyName = ExtractKeyFromBindingPath(columnConfig.BindingPath);
                 if (!string.IsNullOrEmpty(keyName))
@@ -112,7 +148,8 @@ namespace MultiLogViewer.Behaviors
                 // --- セルメニューの設定 (日時フィルターなど) ---
                 if (columnConfig.BindingPath == "Timestamp")
                 {
-                    var cellStyle = new Style(typeof(DataGridCell));
+                    // もしスタイル設定ですでにCellStyleが作られていたらそれを使う
+                    var cellStyle = newColumn.CellStyle ?? new Style(typeof(DataGridCell));
                     var contextMenu = new ContextMenu();
 
                     var afterItem = new MenuItem { Header = "この日時以降をフィルターに追加" };
@@ -126,13 +163,24 @@ namespace MultiLogViewer.Behaviors
                     beforeItem.SetBinding(MenuItem.CommandParameterProperty, new Binding(".") { Converter = new DateTimeFilterConverter(), ConverterParameter = false });
                     contextMenu.Items.Add(beforeItem);
 
-                    cellStyle.Setters.Add(new Setter(DataGridCell.ContextMenuProperty, contextMenu));
+                    // ContextMenuPropertyを上書きせず、Settersに追加する
+                    bool hasContextMenuSetter = false;
+                    foreach (Setter s in cellStyle.Setters)
+                    {
+                        if (s.Property == DataGridCell.ContextMenuProperty) { hasContextMenuSetter = true; break; }
+                    }
+                    if (!hasContextMenuSetter)
+                    {
+                        cellStyle.Setters.Add(new Setter(DataGridCell.ContextMenuProperty, contextMenu));
+                    }
+
                     newColumn.CellStyle = cellStyle;
                 }
 
                 dataGrid.Columns.Add(newColumn);
             }
         }
+
         // セルのデータ（LogEntry）から特定の値（DateTime）を取り出し、フラグとセットでValueTupleにするための内部コンバーター
         private class DateTimeFilterConverter : IValueConverter
         {
@@ -146,6 +194,7 @@ namespace MultiLogViewer.Behaviors
             }
             public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotImplementedException();
         }
+
         private static string? ExtractKeyFromBindingPath(string bindingPath)
         {
             if (string.IsNullOrEmpty(bindingPath)) return null;
