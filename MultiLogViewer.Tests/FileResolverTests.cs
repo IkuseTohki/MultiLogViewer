@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MultiLogViewer.Services;
+using Moq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,7 +43,7 @@ namespace MultiLogViewer.Tests
             File.WriteAllText(Path.Combine(_tempDirectory, "other.txt"), "other content");
 
             var patterns = new List<string> { Path.Combine(_tempDirectory, "test-*.log") };
-            var resolver = new FileResolver(); // まだ存在しないので、ここでコンパイルエラーになるはず
+            var resolver = new FileResolver(new SystemTimeProvider());
 
             // Act
             var result = resolver.Resolve(patterns).ToList();
@@ -70,7 +72,7 @@ namespace MultiLogViewer.Tests
                 Path.Combine(_tempDirectory, "app-*.log"),
                 Path.Combine(_tempDirectory, "db.log")
             };
-            var resolver = new FileResolver(); // まだ存在しないので、ここでコンパイルエラーになるはず
+            var resolver = new FileResolver(new SystemTimeProvider());
 
             // Act
             var result = resolver.Resolve(patterns).ToList();
@@ -92,7 +94,7 @@ namespace MultiLogViewer.Tests
             // Arrange
             File.WriteAllText(Path.Combine(_tempDirectory, "some-file.txt"), "content"); // マッチしないファイル
             var patterns = new List<string> { Path.Combine(_tempDirectory, "*.log") };
-            var resolver = new FileResolver(); // まだ存在しないので、ここでコンパイルエラーになるはず
+            var resolver = new FileResolver(new SystemTimeProvider());
 
             // Act
             var result = resolver.Resolve(patterns).ToList();
@@ -110,7 +112,7 @@ namespace MultiLogViewer.Tests
         {
             // Arrange
             var patterns = new List<string>();
-            var resolver = new FileResolver(); // まだ存在しないので、ここでコンパイルエラーになるはず
+            var resolver = new FileResolver(new SystemTimeProvider());
 
             // Act
             var result = resolver.Resolve(patterns).ToList();
@@ -141,7 +143,7 @@ namespace MultiLogViewer.Tests
 
             // 再帰的なパターン
             var patterns = new List<string> { Path.Combine(_tempDirectory, "**", "*.txt") };
-            var resolver = new FileResolver();
+            var resolver = new FileResolver(new SystemTimeProvider());
 
             // Act
             var result = resolver.Resolve(patterns).ToList();
@@ -153,6 +155,35 @@ namespace MultiLogViewer.Tests
             Assert.IsTrue(result.Contains(Path.Combine(subDir1, "log1.txt")));
             Assert.IsTrue(result.Contains(Path.Combine(subDir2, "log2.txt")));
             Assert.IsFalse(result.Contains(Path.Combine(subDir1, "data.bin")));
+        }
+
+        /// <summary>
+        /// テスト観点: プレースホルダーを含むパターンが、指定された時刻に基づいて正しく解決されることを確認する。
+        /// </summary>
+        [TestMethod]
+        public void Resolve_PlaceholderPattern_ResolvesWithCurrentTime()
+        {
+            // Arrange
+            var testTime = new DateTime(2025, 12, 21, 15, 30, 45);
+            var dateDir = Path.Combine(_tempDirectory, "20251221");
+            Directory.CreateDirectory(dateDir);
+            var logPath = Path.Combine(dateDir, "app.log");
+            File.WriteAllText(logPath, "log content");
+
+            var mockTimeProvider = new Mock<ITimeProvider>();
+            mockTimeProvider.Setup(t => t.Now).Returns(testTime);
+
+            // {yyyy}{MM}{dd} を含むパターン
+            var patterns = new List<string> { Path.Combine(_tempDirectory, "{yyyy}{MM}{dd}", "app.log") };
+            var resolver = new FileResolver(mockTimeProvider.Object);
+
+            // Act
+            var result = resolver.Resolve(patterns).ToList();
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(Path.GetFullPath(logPath), result[0]);
         }
     }
 }

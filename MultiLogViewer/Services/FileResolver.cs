@@ -12,8 +12,20 @@ namespace MultiLogViewer.Services
     /// </summary>
     public class FileResolver : IFileResolver
     {
+        private readonly ITimeProvider _timeProvider;
+
+        /// <summary>
+        /// FileResolver の新しいインスタンスを初期化します。
+        /// </summary>
+        /// <param name="timeProvider">時刻を提供するサービス。</param>
+        public FileResolver(ITimeProvider timeProvider)
+        {
+            _timeProvider = timeProvider;
+        }
+
         /// <summary>
         /// 指定されたglobパターンのリストを解決し、一致する全てのファイルパスを返します。
+        /// パターン内のプレースホルダー（{yyyy}, {MM}, {dd}等）は実行時の時刻で置換されます。
         /// </summary>
         /// <param name="patterns">解決するglobパターンのリスト。</param>
         /// <returns>globパターンに一致するファイルの絶対パスのリスト。</returns>
@@ -24,10 +36,14 @@ namespace MultiLogViewer.Services
                 return Enumerable.Empty<string>();
             }
 
+            var now = _timeProvider.Now;
             var matchingFiles = new HashSet<string>();
 
-            foreach (var pattern in patterns)
+            foreach (var originalPattern in patterns)
             {
+                // プレースホルダーを置換
+                var pattern = ReplacePlaceholders(originalPattern, now);
+
                 string baseDirectory;
                 string relativePattern;
 
@@ -83,6 +99,20 @@ namespace MultiLogViewer.Services
             }
 
             return matchingFiles.OrderBy(f => f); // 結果をソートして返す
+        }
+
+        private string ReplacePlaceholders(string pattern, System.DateTime now)
+        {
+            if (string.IsNullOrEmpty(pattern)) return pattern;
+
+            return pattern
+                .Replace("{yyyy}", now.ToString("yyyy"))
+                .Replace("{yy}", now.ToString("yy"))
+                .Replace("{MM}", now.ToString("MM"))
+                .Replace("{dd}", now.ToString("dd"))
+                .Replace("{HH}", now.ToString("HH"))
+                .Replace("{mm}", now.ToString("mm"))
+                .Replace("{ss}", now.ToString("ss"));
         }
     }
 }
