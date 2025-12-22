@@ -95,13 +95,48 @@
                                   Fill="Gray"
                                   Stretch="Uniform" />
                         </Button>
-                        <TextBox Grid.Column="1"
-                                 Margin="0"
-                                 Padding="2,0"
-                                 VerticalContentAlignment="Center"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <!-- Filter Text and Clear Button -->
+                        <Grid Grid.Column="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0"
+                                     Margin="0"
+                                     Padding="2,0"
+                                     VerticalContentAlignment="Center"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <Button Grid.Column="1"
+                                    Width="16"
+                                    Height="16"
+                                    Margin="0,0,4,0"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ClearFilterCommand}"
+                                    ToolTip="Clear filter">
+                                <Button.Style>
+                                    <Style BasedOn="{StaticResource IconButtonStyle}" TargetType="Button">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding FilterText}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding FilterText}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <Path Width="8"
+                                      Height="8"
+                                      Data="{StaticResource CloseIconGeometry}"
+                                      Fill="{StaticResource SecondaryTextBrush}"
+                                      Stretch="Uniform" />
+                            </Button>
+                        </Grid>
                     </Grid>
                 </Border>
                 <Button Width="24"

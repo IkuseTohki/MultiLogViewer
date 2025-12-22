@@ -111,6 +111,7 @@ namespace MultiLogViewer.ViewModels
         public ICommand ToggleTailCommand { get; }
         public ICommand SavePresetCommand { get; }
         public ICommand LoadPresetCommand { get; }
+        public ICommand ClearFilterCommand { get; }
 
         private ObservableCollection<LogFilter> _activeExtensionFilters = new ObservableCollection<LogFilter>();
         public ObservableCollection<LogFilter> ActiveExtensionFilters => _activeExtensionFilters;
@@ -148,6 +149,7 @@ namespace MultiLogViewer.ViewModels
             ToggleTailCommand = new RelayCommand(_ => IsTailEnabled = !IsTailEnabled);
             SavePresetCommand = new RelayCommand(_ => SavePreset());
             LoadPresetCommand = new RelayCommand(_ => LoadPreset());
+            ClearFilterCommand = new RelayCommand(_ => FilterText = string.Empty);
 
             _activeExtensionFilters.CollectionChanged += (s, e) => LogEntriesView.Refresh();
 
