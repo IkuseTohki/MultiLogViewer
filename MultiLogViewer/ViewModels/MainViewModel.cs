@@ -52,6 +52,13 @@ namespace MultiLogViewer.ViewModels
             set => SetProperty(ref _isAtBottom, value);
         }
 
+        private bool _isLoading;
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
+        }
+
         private LogEntry? _selectedLogEntry;
         public LogEntry? SelectedLogEntry
         {
@@ -139,7 +146,18 @@ namespace MultiLogViewer.ViewModels
             LogEntriesView = CollectionViewSource.GetDefaultView(_logEntries);
             LogEntriesView.Filter = FilterLogEntries;
 
-            RefreshCommand = new RelayCommand(_ => LoadLogs(_configPath));
+            RefreshCommand = new RelayCommand(async _ =>
+            {
+                IsLoading = true;
+                try
+                {
+                    await System.Threading.Tasks.Task.Run(() => LoadLogs(_configPath));
+                }
+                finally
+                {
+                    IsLoading = false;
+                }
+            });
             OpenSearchCommand = new RelayCommand(_ => OpenSearch());
             CopyCommand = new RelayCommand(_ => CopySelectedLogEntry());
             ToggleDetailPanelCommand = new RelayCommand(_ => IsDetailPanelVisible = !IsDetailPanelVisible);
@@ -399,10 +417,20 @@ namespace MultiLogViewer.ViewModels
         /// ViewModel を初期化し、指定された設定ファイルからログを読み込みます。
         /// </summary>
         /// <param name="configPath">設定ファイルのパス。</param>
-        public void Initialize(string configPath)
+        public async void Initialize(string configPath)
         {
             _configPath = configPath;
-            LoadLogs(_configPath);
+            if (string.IsNullOrEmpty(configPath)) return;
+
+            IsLoading = true;
+            try
+            {
+                await System.Threading.Tasks.Task.Run(() => LoadLogs(_configPath));
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private void LoadLogs(string configPath)
@@ -413,44 +441,52 @@ namespace MultiLogViewer.ViewModels
             {
                 var result = _logService.LoadFromConfig(configPath);
 
-                _fileStates = result.FileStates;
-                _pollingIntervalMs = result.PollingIntervalMs;
-                _tailTimer.Interval = TimeSpan.FromMilliseconds(_pollingIntervalMs);
-
-                // DisplayColumns を設定
-                if (result.DisplayColumns != null && result.DisplayColumns.Any())
+                // UIスレッドでコレクションを更新する必要がある
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
-                    DisplayColumns = new ObservableCollection<DisplayColumnConfig>(result.DisplayColumns);
-                }
+                    _fileStates = result.FileStates;
+                    _pollingIntervalMs = result.PollingIntervalMs;
+                    _tailTimer.Interval = TimeSpan.FromMilliseconds(_pollingIntervalMs);
 
-                // エントリをコレクションに追加
-                _logEntries.Clear();
-                var allKeys = new HashSet<string>();
-                foreach (var entry in result.Entries)
-                {
-                    _logEntries.Add(entry);
-                    if (entry.AdditionalData != null)
+                    // DisplayColumns を設定
+                    if (result.DisplayColumns != null && result.DisplayColumns.Any())
                     {
-                        foreach (var key in entry.AdditionalData.Keys)
+                        DisplayColumns = new ObservableCollection<DisplayColumnConfig>(result.DisplayColumns);
+                    }
+
+                    // エントリをコレクションに追加
+                    _logEntries.Clear();
+                    var allKeys = new HashSet<string>();
+                    foreach (var entry in result.Entries)
+                    {
+                        _logEntries.Add(entry);
+                        if (entry.AdditionalData != null)
                         {
-                            allKeys.Add(key);
+                            foreach (var key in entry.AdditionalData.Keys)
+                            {
+                                allKeys.Add(key);
+                            }
                         }
                     }
-                }
 
-                // 利用可能なキー一覧を更新
-                _availableAdditionalDataKeys.Clear();
-                foreach (var key in allKeys.OrderBy(k => k))
-                {
-                    _availableAdditionalDataKeys.Add(key);
-                }
+                    // 利用可能なキー一覧を更新
+                    _availableAdditionalDataKeys.Clear();
+                    foreach (var key in allKeys.OrderBy(k => k))
+                    {
+                        _availableAdditionalDataKeys.Add(key);
+                    }
 
-                LogEntriesView.Refresh();
+                    LogEntriesView.Refresh();
+                });
             }
             catch (System.Exception ex)
             {
-                // 設定読み込みエラーをユーザーに通知
-                _userDialogService.ShowError("設定エラー", ex.Message);
+                // UI操作を含むためDispatcher経由で
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    // 設定読み込みエラーをユーザーに通知
+                    _userDialogService.ShowError("設定エラー", ex.Message);
+                });
             }
         }
 
