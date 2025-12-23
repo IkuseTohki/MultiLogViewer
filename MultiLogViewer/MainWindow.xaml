@@ -41,16 +41,16 @@
             </Grid>
         </DataTemplate>
     </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Key="F"
+                    Command="{Binding OpenSearchCommand}"
+                    Modifiers="Control" />
+        <KeyBinding Key="C"
+                    Command="{Binding CopyCommand}"
+                    Modifiers="Control" />
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+    </Window.InputBindings>
     <DockPanel>
-
-        <DockPanel.InputBindings>
-            <KeyBinding Key="F"
-                        Command="{Binding OpenSearchCommand}"
-                        Modifiers="Control" />
-            <KeyBinding Key="C"
-                        Command="{Binding CopyCommand}"
-                        Modifiers="Control" />
-        </DockPanel.InputBindings>
 
         <StackPanel Margin="5"
                     DockPanel.Dock="Top"

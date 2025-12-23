@@ -33,6 +33,8 @@ namespace MultiLogViewer
             services.AddSingleton<IClipboardService, WpfClipboardService>();
             services.AddSingleton<IConfigPathResolver, ConfigPathResolver>();
             services.AddSingleton<IFilterPresetService, FilterPresetService>();
+            services.AddSingleton<IDispatcherService, WpfDispatcherService>();
+            services.AddSingleton<ITaskRunner, TaskRunner>();
 
             // ViewModels
             services.AddTransient(provider =>
@@ -43,7 +45,9 @@ namespace MultiLogViewer
                     provider.GetRequiredService<ILogSearchService>(),
                     provider.GetRequiredService<IClipboardService>(),
                     provider.GetRequiredService<IConfigPathResolver>(),
-                    provider.GetRequiredService<IFilterPresetService>()));
+                    provider.GetRequiredService<IFilterPresetService>(),
+                    provider.GetRequiredService<IDispatcherService>(),
+                    provider.GetRequiredService<ITaskRunner>()));
 
 
             // Main Window
@@ -64,7 +68,7 @@ namespace MultiLogViewer
 
                 var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
                 var mainViewModel = _serviceProvider.GetRequiredService<MainViewModel>();
-                mainViewModel.Initialize(configPath); // 新しい初期化メソッドを呼び出す
+                _ = mainViewModel.Initialize(configPath); // 新しい初期化メソッドを呼び出す
                 mainWindow.DataContext = mainViewModel;
                 mainWindow.Show();
             }

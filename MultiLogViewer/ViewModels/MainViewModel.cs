@@ -22,13 +22,16 @@ namespace MultiLogViewer.ViewModels
         private readonly IClipboardService _clipboardService;
         private readonly IConfigPathResolver _configPathResolver;
         private readonly IFilterPresetService _filterPresetService;
+        private readonly IDispatcherService _dispatcherService;
+        private readonly ITaskRunner _taskRunner;
 
         private string _configPath = string.Empty;
         private List<FileState> _fileStates = new List<FileState>();
+
         private int _pollingIntervalMs = 1000;
         private readonly System.Windows.Threading.DispatcherTimer _tailTimer;
 
-        private readonly ObservableCollection<LogEntry> _logEntries = new ObservableCollection<LogEntry>();
+        private readonly RangeObservableCollection<LogEntry> _logEntries = new RangeObservableCollection<LogEntry>();
         public ICollectionView LogEntriesView { get; }
 
         private bool _isTailEnabled;
@@ -133,7 +136,9 @@ namespace MultiLogViewer.ViewModels
             ILogSearchService logSearchService,
             IClipboardService clipboardService,
             IConfigPathResolver configPathResolver,
-            IFilterPresetService filterPresetService)
+            IFilterPresetService filterPresetService,
+            IDispatcherService dispatcherService,
+            ITaskRunner taskRunner)
         {
             _logService = logService;
             _userDialogService = userDialogService;
@@ -142,6 +147,8 @@ namespace MultiLogViewer.ViewModels
             _clipboardService = clipboardService;
             _configPathResolver = configPathResolver;
             _filterPresetService = filterPresetService;
+            _dispatcherService = dispatcherService;
+            _taskRunner = taskRunner;
 
             LogEntriesView = CollectionViewSource.GetDefaultView(_logEntries);
             LogEntriesView.Filter = FilterLogEntries;
@@ -151,7 +158,7 @@ namespace MultiLogViewer.ViewModels
                 IsLoading = true;
                 try
                 {
-                    await System.Threading.Tasks.Task.Run(() => LoadLogs(_configPath));
+                    await _taskRunner.Run(() => LoadLogs(_configPath));
                 }
                 finally
                 {
@@ -417,7 +424,7 @@ namespace MultiLogViewer.ViewModels
         /// ViewModel を初期化し、指定された設定ファイルからログを読み込みます。
         /// </summary>
         /// <param name="configPath">設定ファイルのパス。</param>
-        public async void Initialize(string configPath)
+        public async System.Threading.Tasks.Task Initialize(string configPath)
         {
             _configPath = configPath;
             if (string.IsNullOrEmpty(configPath)) return;
@@ -425,7 +432,7 @@ namespace MultiLogViewer.ViewModels
             IsLoading = true;
             try
             {
-                await System.Threading.Tasks.Task.Run(() => LoadLogs(_configPath));
+                await _taskRunner.Run(() => LoadLogs(_configPath));
             }
             finally
             {
@@ -441,8 +448,22 @@ namespace MultiLogViewer.ViewModels
             {
                 var result = _logService.LoadFromConfig(configPath);
 
-                // UIスレッドでコレクションを更新する必要がある
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                // UIスレッド外で計算できるものは事前に計算する
+                var allKeys = new HashSet<string>();
+                foreach (var entry in result.Entries)
+                {
+                    if (entry.AdditionalData != null)
+                    {
+                        foreach (var key in entry.AdditionalData.Keys)
+                        {
+                            allKeys.Add(key);
+                        }
+                    }
+                }
+                var sortedKeys = allKeys.OrderBy(k => k).ToList();
+
+                // UIスレッドでコレクションを更新する
+                _dispatcherService.Invoke(() =>
                 {
                     _fileStates = result.FileStates;
                     _pollingIntervalMs = result.PollingIntervalMs;
@@ -454,24 +475,13 @@ namespace MultiLogViewer.ViewModels
                         DisplayColumns = new ObservableCollection<DisplayColumnConfig>(result.DisplayColumns);
                     }
 
-                    // エントリをコレクションに追加
+                    // エントリを一括でコレクションに追加 (RangeObservableCollectionを使用)
                     _logEntries.Clear();
-                    var allKeys = new HashSet<string>();
-                    foreach (var entry in result.Entries)
-                    {
-                        _logEntries.Add(entry);
-                        if (entry.AdditionalData != null)
-                        {
-                            foreach (var key in entry.AdditionalData.Keys)
-                            {
-                                allKeys.Add(key);
-                            }
-                        }
-                    }
+                    _logEntries.AddRange(result.Entries);
 
                     // 利用可能なキー一覧を更新
                     _availableAdditionalDataKeys.Clear();
-                    foreach (var key in allKeys.OrderBy(k => k))
+                    foreach (var key in sortedKeys)
                     {
                         _availableAdditionalDataKeys.Add(key);
                     }
@@ -482,7 +492,7 @@ namespace MultiLogViewer.ViewModels
             catch (System.Exception ex)
             {
                 // UI操作を含むためDispatcher経由で
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                _dispatcherService.Invoke(() =>
                 {
                     // 設定読み込みエラーをユーザーに通知
                     _userDialogService.ShowError("設定エラー", ex.Message);

@@ -3,9 +3,11 @@ using Moq;
 using MultiLogViewer.Models;
 using MultiLogViewer.Services;
 using MultiLogViewer.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MultiLogViewer.Tests
 {
@@ -16,9 +18,11 @@ namespace MultiLogViewer.Tests
         private Mock<IUserDialogService> _mockUserDialogService = null!;
         private Mock<ISearchWindowService> _mockSearchWindowService = null!;
         private ILogSearchService _logSearchService = null!;
-        private Mock<IClipboardService> _mockClipboardService = null!; // 追加
+        private Mock<IClipboardService> _mockClipboardService = null!;
         private Mock<IConfigPathResolver> _mockConfigPathResolver = null!;
         private Mock<IFilterPresetService> _mockFilterPresetService = null!;
+        private Mock<IDispatcherService> _mockDispatcherService = null!;
+        private Mock<ITaskRunner> _mockTaskRunner = null!;
         private MainViewModel _viewModel = null!;
 
         [TestInitialize]
@@ -28,9 +32,22 @@ namespace MultiLogViewer.Tests
             _mockUserDialogService = new Mock<IUserDialogService>();
             _mockSearchWindowService = new Mock<ISearchWindowService>();
             _logSearchService = new LogSearchService();
-            _mockClipboardService = new Mock<IClipboardService>(); // 追加
+            _mockClipboardService = new Mock<IClipboardService>();
             _mockConfigPathResolver = new Mock<IConfigPathResolver>();
             _mockFilterPresetService = new Mock<IFilterPresetService>();
+            _mockDispatcherService = new Mock<IDispatcherService>();
+            _mockTaskRunner = new Mock<ITaskRunner>();
+
+            // Dispatcher: テストスレッドで即時実行
+            _mockDispatcherService.Setup(d => d.Invoke(It.IsAny<Action>())).Callback<Action>(a => a());
+
+            // TaskRunner: テストスレッドで同期的に即時実行
+            _mockTaskRunner.Setup(r => r.Run(It.IsAny<Action>()))
+                .Returns((Action a) =>
+                {
+                    a();
+                    return Task.CompletedTask;
+                });
         }
 
         private MainViewModel CreateViewModel()
@@ -40,13 +57,15 @@ namespace MultiLogViewer.Tests
                 _mockUserDialogService.Object,
                 _mockSearchWindowService.Object,
                 _logSearchService,
-                _mockClipboardService.Object, // 追加
+                _mockClipboardService.Object,
                 _mockConfigPathResolver.Object,
-                _mockFilterPresetService.Object);
+                _mockFilterPresetService.Object,
+                _mockDispatcherService.Object,
+                _mockTaskRunner.Object);
         }
 
         [TestMethod]
-        public void CopyCommand_CopiesSelectedEntryToClipboard()
+        public async Task CopyCommand_CopiesSelectedEntryToClipboard()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -68,7 +87,7 @@ namespace MultiLogViewer.Tests
                 new DisplayColumnConfig { Header = "Msg", BindingPath = "Message" }
             };
 
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
             _viewModel.SelectedLogEntry = logs[0];
 
             // Act
@@ -80,7 +99,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void AddExtensionFilterCommand_AddsKeyAndRefreshesView()
+        public async Task AddExtensionFilterCommand_AddsKeyAndRefreshesView()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -89,7 +108,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Entry with Value", AdditionalData = new Dictionary<string, string> { { "Level", "INFO" } } },
                 new LogEntry { Message = "Entry without Value", AdditionalData = new Dictionary<string, string> { { "Level", "" } } }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             // Act
             _viewModel.AddExtensionFilterCommand.Execute("Level");
@@ -102,7 +121,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void RemoveExtensionFilterCommand_RemovesKeyAndRefreshesView()
+        public async Task RemoveExtensionFilterCommand_RemovesKeyAndRefreshesView()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -110,7 +129,7 @@ namespace MultiLogViewer.Tests
             {
                 new LogEntry { Message = "Empty", AdditionalData = new Dictionary<string, string> { { "Level", "" } } }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
             _viewModel.AddExtensionFilterCommand.Execute("Level");
             Assert.AreEqual(0, _viewModel.LogEntriesView.Cast<LogEntry>().Count());
 
@@ -125,7 +144,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void LoadLogs_PopulatesAvailableAdditionalDataKeys()
+        public async Task LoadLogs_PopulatesAvailableAdditionalDataKeys()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -134,7 +153,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { AdditionalData = new Dictionary<string, string> { { "User", "A" }, { "Level", "INFO" } } },
                 new LogEntry { AdditionalData = new Dictionary<string, string> { { "Tag", "T1" }, { "Level", "DEBUG" } } }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             // Assert
             Assert.AreEqual(3, _viewModel.AvailableAdditionalDataKeys.Count);
@@ -144,7 +163,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void Initialize_Successful_LoadsLogsAndColumns()
+        public async Task Initialize_Successful_LoadsLogsAndColumns()
         {
             // Arrange
             var result = new LogDataResult(
@@ -157,7 +176,10 @@ namespace MultiLogViewer.Tests
 
             // Act
             _viewModel = CreateViewModel();
-            _viewModel.Initialize("dummy_path");
+            await _viewModel.Initialize("dummy_path");
+
+            // Verify no error occurred
+            _mockUserDialogService.Verify(s => s.ShowError(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
 
             // Assert
             Assert.AreEqual(1, _viewModel.LogEntriesView.Cast<LogEntry>().Count());
@@ -168,21 +190,21 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void Initialize_ConfigLoadFails_DoesNotThrow()
+        public async Task Initialize_ConfigLoadFails_DoesNotThrow()
         {
             // Arrange
             _mockLogService.Setup(s => s.LoadFromConfig(It.IsAny<string>())).Returns(new LogDataResult(new List<LogEntry>(), new List<DisplayColumnConfig>(), new List<FileState>()));
 
             // Act
             _viewModel = CreateViewModel();
-            _viewModel.Initialize("dummy_path");
+            await _viewModel.Initialize("dummy_path");
 
             // Assert
             Assert.AreEqual(0, _viewModel.LogEntriesView.Cast<LogEntry>().Count());
         }
 
         [TestMethod]
-        public void LoadLogs_ShowsErrorDialog_WhenExceptionOccurs()
+        public async Task LoadLogs_ShowsErrorDialog_WhenExceptionOccurs()
         {
             // Arrange
             var errorMessage = "Invalid YAML format";
@@ -192,7 +214,7 @@ namespace MultiLogViewer.Tests
             _viewModel = CreateViewModel();
 
             // Act
-            _viewModel.Initialize("invalid_config.yaml");
+            await _viewModel.Initialize("invalid_config.yaml");
 
             // Assert
             _mockUserDialogService.Verify(s => s.ShowError("設定エラー", errorMessage), Times.Once);
@@ -287,7 +309,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FilterText_MatchesAdditionalData()
+        public async Task FilterText_MatchesAdditionalData()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -296,7 +318,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Msg1", AdditionalData = new Dictionary<string, string> { { "Level", "INFO" } } },
                 new LogEntry { Message = "Msg2", AdditionalData = new Dictionary<string, string> { { "Level", "ERROR" } } }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             // Act
             _viewModel.FilterText = "ERROR";
@@ -308,7 +330,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FilterText_MatchesFileName()
+        public async Task FilterText_MatchesFileName()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -317,7 +339,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Msg1", FileName = "App.log" },
                 new LogEntry { Message = "Msg2", FileName = "Error.log" }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             // Act
             _viewModel.FilterText = "Error.log";
@@ -329,18 +351,19 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void RefreshCommand_ReloadsLogs()
+        public async Task RefreshCommand_ReloadsLogs()
         {
             // Arrange
             _mockLogService.Setup(s => s.LoadFromConfig(It.IsAny<string>()))
                 .Returns(new LogDataResult(new List<LogEntry>(), new List<DisplayColumnConfig>(), new List<FileState>()));
 
             _viewModel = CreateViewModel();
-            _viewModel.Initialize("config.yaml");
+            await _viewModel.Initialize("config.yaml");
             _mockLogService.Invocations.Clear();
 
             // Act
             _viewModel.RefreshCommand.Execute(null);
+            // 同期実行されるため待機不要
 
             // Assert
             _mockLogService.Verify(s => s.LoadFromConfig("config.yaml"), Times.Once);
@@ -362,7 +385,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FindNext_WhenFound_SelectsEntry()
+        public async Task FindNext_WhenFound_SelectsEntry()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -373,7 +396,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Beta" },
                 new LogEntry { Message = "Gamma" }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             // Capture the SearchViewModel passed to Show
             SearchViewModel? capturedSearchVM = null;
@@ -394,7 +417,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FindNext_MatchesAdditionalData()
+        public async Task FindNext_MatchesAdditionalData()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -404,7 +427,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Msg2", AdditionalData = new Dictionary<string, string> { { "Level", "ERROR" } } },
                 new LogEntry { Message = "Msg3", AdditionalData = new Dictionary<string, string> { { "Level", "INFO" } } }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             SearchViewModel capturedSearchVM = GetSearchViewModel(_viewModel);
             capturedSearchVM.SearchText = "ERROR";
@@ -418,7 +441,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FindNext_MatchesFileName()
+        public async Task FindNext_MatchesFileName()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -427,7 +450,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Msg1", FileName = "App.log" },
                 new LogEntry { Message = "Msg2", FileName = "Error.log" },
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             SearchViewModel capturedSearchVM = GetSearchViewModel(_viewModel);
             capturedSearchVM.SearchText = "Error.log";
@@ -441,7 +464,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FindNext_CaseSensitivity_Respected()
+        public async Task FindNext_CaseSensitivity_Respected()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -450,7 +473,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "apple" },
                 new LogEntry { Message = "Apple" },
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             SearchViewModel capturedSearchVM = GetSearchViewModel(_viewModel);
             capturedSearchVM.SearchText = "Apple";
@@ -465,12 +488,12 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FindNext_InvalidRegex_DoesNotCrash()
+        public async Task FindNext_InvalidRegex_DoesNotCrash()
         {
             // Arrange
             _viewModel = CreateViewModel();
             var logs = new List<LogEntry> { new LogEntry { Message = "Test" } };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             SearchViewModel capturedSearchVM = GetSearchViewModel(_viewModel);
             capturedSearchVM.SearchText = "[Invalid Regex"; // Missing closing bracket
@@ -492,7 +515,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FindNext_UpdatesStatusText()
+        public async Task FindNext_UpdatesStatusText()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -502,7 +525,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Target" },
                 new LogEntry { Message = "Target" }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             SearchViewModel capturedSearchVM = GetSearchViewModel(_viewModel);
             capturedSearchVM.SearchText = "Target";
@@ -530,7 +553,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FindNext_WrapsAround()
+        public async Task FindNext_WrapsAround()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -540,7 +563,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Other" },
                 new LogEntry { Message = "Target" }
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             SearchViewModel capturedSearchVM = GetSearchViewModel(_viewModel);
             capturedSearchVM.SearchText = "Target";
@@ -557,7 +580,7 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
-        public void FindPrevious_WhenFound_SelectsEntry()
+        public async Task FindPrevious_WhenFound_SelectsEntry()
         {
             // Arrange
             _viewModel = CreateViewModel();
@@ -567,7 +590,7 @@ namespace MultiLogViewer.Tests
                 new LogEntry { Message = "Other" },  // 1
                 new LogEntry { Message = "Target" }  // 2
             };
-            SetLogsToViewModel(_viewModel, logs);
+            await SetLogsToViewModel(_viewModel, logs);
 
             SearchViewModel capturedSearchVM = GetSearchViewModel(_viewModel);
             capturedSearchVM.SearchText = "Target";
@@ -582,12 +605,12 @@ namespace MultiLogViewer.Tests
             Assert.AreEqual(logs[0], _viewModel.SelectedLogEntry, "Should find the previous target.");
         }
 
-        private void SetLogsToViewModel(MainViewModel vm, List<LogEntry> logs)
+        private async Task SetLogsToViewModel(MainViewModel vm, List<LogEntry> logs)
         {
             var result = new LogDataResult(logs, new List<DisplayColumnConfig>(), new List<FileState>());
             _mockLogService.Setup(s => s.LoadFromConfig(It.IsAny<string>())).Returns(result);
 
-            vm.Initialize("dummy");
+            await vm.Initialize("dummy");
         }
 
         private SearchViewModel GetSearchViewModel(MainViewModel vm)
