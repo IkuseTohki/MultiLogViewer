@@ -19,11 +19,6 @@
                 <ResourceDictionary Source="Resources/Styles/BadgeStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-            <converters:SingleLineMessageConverter x:Key="SingleLineMessageConverter" />
-            <converters:MultilineToVisibilityConverter x:Key="MultilineToVisibilityConverter" />
-            <converters:DoubleToGridLengthConverter x:Key="DoubleToGridLengthConverter" />
-
             <DataTemplate x:Key="MultilineMessageTemplate">
                 <Grid Margin="2,0">
                     <Grid.ColumnDefinitions>

@@ -1,0 +1,11 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:MultiLogViewer.ViewModels.Converters">
+
+    <!-- 共通コンバーターのインスタンス定義 -->
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    <converters:SingleLineMessageConverter x:Key="SingleLineMessageConverter" />
+    <converters:MultilineToVisibilityConverter x:Key="MultilineToVisibilityConverter" />
+    <converters:DoubleToGridLengthConverter x:Key="DoubleToGridLengthConverter" />
+
+</ResourceDictionary>
