@@ -6,7 +6,8 @@ namespace MultiLogViewer.Models
     {
         ColumnEmpty,    // カラムが空なら非表示
         DateTimeAfter,  // 指定日時以降を表示
-        DateTimeBefore  // 指定日時以前を表示
+        DateTimeBefore, // 指定日時以前を表示
+        Bookmark        // ブックマークされた行のみ表示
     }
 
     /// <summary>

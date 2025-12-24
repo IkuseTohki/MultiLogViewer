@@ -124,6 +124,10 @@ namespace MultiLogViewer.Services
                 {
                     if (entry.Timestamp > filter.Value) return true; // 指定より後なので非表示
                 }
+                else if (filter.Type == FilterType.Bookmark)
+                {
+                    if (!entry.IsBookmarked) return true; // ブックマークされていないので非表示
+                }
             }
 
             return false;

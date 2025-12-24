@@ -1,0 +1,52 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:models="clr-namespace:MultiLogViewer.Models">
+
+    <!-- 共通のバッジ内コンテンツ (削除ボタンなど) -->
+    <Style x:Key="BadgeRemoveButtonStyle"
+           BasedOn="{StaticResource BadgeCloseButtonStyle}"
+           TargetType="Button">
+        <Setter Property="Command" Value="{Binding DataContext.RemoveExtensionFilterCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+        <Setter Property="CommandParameter" Value="{Binding}" />
+    </Style>
+
+    <!-- 通常のフィルターバッジ (LogFilter 型) -->
+    <DataTemplate DataType="{x:Type models:LogFilter}">
+        <Border Margin="0,0,5,5" Style="{StaticResource BadgeContainerStyle}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource BadgeTextStyle}" Text="{Binding DisplayText}" />
+                <Button Style="{StaticResource BadgeRemoveButtonStyle}">
+                    <Path Width="6"
+                          Height="6"
+                          Data="{StaticResource CloseIconGeometry}"
+                          Fill="{StaticResource SecondaryTextBrush}"
+                          Stretch="Uniform" />
+                </Button>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
+    <!-- ブックマークフィルターバッジ (BookmarkFilter 型) -->
+    <DataTemplate DataType="{x:Type models:BookmarkFilter}">
+        <Border Margin="0,0,5,5" Style="{StaticResource BadgeContainerStyle}">
+            <StackPanel Orientation="Horizontal">
+                <Path Width="10"
+                      Height="10"
+                      Margin="0,0,4,0"
+                      VerticalAlignment="Center"
+                      Data="{StaticResource BookmarkIconGeometry}"
+                      Fill="{StaticResource PrimaryHueMidBrush}"
+                      Stretch="Uniform" />
+                <TextBlock Style="{StaticResource BadgeTextStyle}" Text="{Binding DisplayText}" />
+                <Button Style="{StaticResource BadgeRemoveButtonStyle}">
+                    <Path Width="6"
+                          Height="6"
+                          Data="{StaticResource CloseIconGeometry}"
+                          Fill="{StaticResource SecondaryTextBrush}"
+                          Stretch="Uniform" />
+                </Button>
+            </StackPanel>
+        </Border>
+    </DataTemplate>
+
+</ResourceDictionary>

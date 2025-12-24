@@ -717,6 +717,49 @@ namespace MultiLogViewer.Tests
             Assert.IsFalse(logs.Any(l => l.IsBookmarked), "All bookmarks should be cleared.");
         }
 
+        [TestMethod]
+        public async Task BookmarkOnlyFilter_WhenActive_HidesUnmarkedEntries()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            var logs = new List<LogEntry>
+            {
+                new LogEntry { Message = "Marked", IsBookmarked = true },
+                new LogEntry { Message = "Unmarked", IsBookmarked = false }
+            };
+            await SetLogsToViewModel(_viewModel, logs);
+
+            // Act
+            _viewModel.AddBookmarkFilterCommand.Execute(null);
+
+            // Assert
+            var view = _viewModel.LogEntriesView.Cast<LogEntry>().ToList();
+            Assert.AreEqual(1, view.Count);
+            Assert.AreEqual("Marked", view[0].Message);
+
+            // Act 2: Disable filter (remove from active filters)
+            var filter = _viewModel.ActiveExtensionFilters.First(f => f.Type == FilterType.Bookmark);
+            _viewModel.RemoveExtensionFilterCommand.Execute(filter);
+            Assert.AreEqual(2, _viewModel.LogEntriesView.Cast<LogEntry>().Count());
+        }
+
+        [TestMethod]
+        public async Task AddBookmarkFilterCommand_AddsFilterExactlyOnce()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            await SetLogsToViewModel(_viewModel, new List<LogEntry>());
+
+            // Act
+            _viewModel.AddBookmarkFilterCommand.Execute(null);
+            _viewModel.AddBookmarkFilterCommand.Execute(null); // 2回実行
+
+            // Assert
+            var bookmarkFilters = _viewModel.ActiveExtensionFilters.Where(f => f.Type == FilterType.Bookmark).ToList();
+            Assert.AreEqual(1, bookmarkFilters.Count, "Should add only one bookmark filter even if executed multiple times.");
+            Assert.AreEqual("Bookmark", bookmarkFilters[0].DisplayText);
+        }
+
         private async Task SetLogsToViewModel(MainViewModel vm, List<LogEntry> logs)
         {
             var result = new LogDataResult(logs, new List<DisplayColumnConfig>(), new List<FileState>());

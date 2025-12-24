@@ -11,6 +11,10 @@ namespace MultiLogViewer.ViewModels.Converters
         {
             if (value is string message && !string.IsNullOrEmpty(message))
             {
+                if (parameter as string == "NotEmpty")
+                {
+                    return Visibility.Visible;
+                }
                 return message.IndexOfAny(new[] { '\r', '\n' }) >= 0 ? Visibility.Visible : Visibility.Collapsed;
             }
             return Visibility.Collapsed;

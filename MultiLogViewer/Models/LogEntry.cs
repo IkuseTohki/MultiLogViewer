@@ -20,5 +20,12 @@ namespace MultiLogViewer.Models
             get => _isBookmarked;
             set => SetProperty(ref _isBookmarked, value);
         }
+
+        private string _bookmarkMemo = string.Empty;
+        public string BookmarkMemo
+        {
+            get => _bookmarkMemo;
+            set => SetProperty(ref _bookmarkMemo, value);
+        }
     }
 }

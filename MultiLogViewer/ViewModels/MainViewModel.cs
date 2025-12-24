@@ -76,6 +76,15 @@ namespace MultiLogViewer.ViewModels
             }
         }
 
+        private bool _isBookmarkPanelVisible = false;
+        public bool IsBookmarkPanelVisible
+        {
+            get => _isBookmarkPanelVisible;
+            set => SetProperty(ref _isBookmarkPanelVisible, value);
+        }
+
+        public ICollectionView BookmarkedEntries { get; }
+
         private SearchViewModel? _searchViewModel;
 
         private bool _isDetailPanelVisible = false;
@@ -120,6 +129,8 @@ namespace MultiLogViewer.ViewModels
         public ICommand NextBookmarkCommand { get; }
         public ICommand PreviousBookmarkCommand { get; }
         public ICommand ClearBookmarksCommand { get; }
+        public ICommand AddBookmarkFilterCommand { get; }
+        public ICommand ToggleBookmarkPanelCommand { get; }
         public ICommand ToggleDetailPanelCommand { get; }
         public ICommand AddExtensionFilterCommand { get; }
         public ICommand AddDateTimeFilterCommand { get; }
@@ -158,9 +169,13 @@ namespace MultiLogViewer.ViewModels
             _taskRunner = taskRunner;
             _goToDateDialogService = goToDateDialogService;
 
-            LogEntriesView = CollectionViewSource.GetDefaultView(_logEntries);
+            LogEntriesView = new ListCollectionView(_logEntries);
             LogEntriesView.SortDescriptions.Add(new System.ComponentModel.SortDescription("Timestamp", System.ComponentModel.ListSortDirection.Ascending));
             LogEntriesView.Filter = FilterLogEntries;
+
+            BookmarkedEntries = new ListCollectionView(_logEntries);
+            BookmarkedEntries.Filter = item => (item is LogEntry entry) && entry.IsBookmarked;
+            BookmarkedEntries.SortDescriptions.Add(new System.ComponentModel.SortDescription("Timestamp", System.ComponentModel.ListSortDirection.Ascending));
 
             RefreshCommand = new RelayCommand(async _ =>
             {
@@ -181,6 +196,8 @@ namespace MultiLogViewer.ViewModels
             NextBookmarkCommand = new RelayCommand(_ => NavigateBookmark(true));
             PreviousBookmarkCommand = new RelayCommand(_ => NavigateBookmark(false));
             ClearBookmarksCommand = new RelayCommand(_ => ClearBookmarks());
+            AddBookmarkFilterCommand = new RelayCommand(_ => AddBookmarkFilter());
+            ToggleBookmarkPanelCommand = new RelayCommand(_ => IsBookmarkPanelVisible = !IsBookmarkPanelVisible);
             ToggleDetailPanelCommand = new RelayCommand(_ => IsDetailPanelVisible = !IsDetailPanelVisible);
             AddExtensionFilterCommand = new RelayCommand(param => AddExtensionFilter(param as string));
             AddDateTimeFilterCommand = new RelayCommand(param => AddDateTimeFilter(param));
@@ -402,6 +419,7 @@ namespace MultiLogViewer.ViewModels
             if (SelectedLogEntry != null)
             {
                 SelectedLogEntry.IsBookmarked = !SelectedLogEntry.IsBookmarked;
+                BookmarkedEntries.Refresh();
             }
         }
 
@@ -411,7 +429,6 @@ namespace MultiLogViewer.ViewModels
             if (!entries.Any()) return;
 
             var bookmarkedEntries = entries.Where(e => e.IsBookmarked).ToList();
-
             if (!bookmarkedEntries.Any()) return;
 
             int currentIndex = entries.IndexOf(SelectedLogEntry!);
@@ -421,7 +438,6 @@ namespace MultiLogViewer.ViewModels
             {
                 // 次のブックマーク（現在位置より後ろ）を探す
                 nextEntry = bookmarkedEntries.FirstOrDefault(e => entries.IndexOf(e) > currentIndex);
-
                 // 見つからなければ先頭に戻る
                 nextEntry ??= bookmarkedEntries.First();
             }
@@ -429,7 +445,6 @@ namespace MultiLogViewer.ViewModels
             {
                 // 前のブックマーク（現在位置より前）を探す
                 nextEntry = bookmarkedEntries.LastOrDefault(e => entries.IndexOf(e) < currentIndex);
-
                 // 見つからなければ末尾に戻る
                 nextEntry ??= bookmarkedEntries.Last();
             }
@@ -445,6 +460,16 @@ namespace MultiLogViewer.ViewModels
             foreach (var entry in _logEntries)
             {
                 entry.IsBookmarked = false;
+            }
+            BookmarkedEntries.Refresh();
+        }
+
+        private void AddBookmarkFilter()
+        {
+            var newFilter = new BookmarkFilter();
+            if (!_activeExtensionFilters.Contains(newFilter))
+            {
+                _activeExtensionFilters.Add(newFilter);
             }
         }
 

@@ -90,10 +90,11 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Width" Value="20" />
+        <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}" />
         <Setter Property="ContextMenu">
             <Setter.Value>
                 <ContextMenu>
-                    <MenuItem Command="{Binding DataContext.ClearBookmarksCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" Header="Clear All Bookmarks" />
+                    <MenuItem Command="{Binding PlacementTarget.Tag.ClearBookmarksCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" Header="ブックマークをすべて解除" />
                 </ContextMenu>
             </Setter.Value>
         </Setter>
