@@ -117,6 +117,9 @@ namespace MultiLogViewer.ViewModels
         public ICommand CopyCommand { get; }
         public ICommand GoToDateCommand { get; }
         public ICommand ToggleBookmarkCommand { get; }
+        public ICommand NextBookmarkCommand { get; }
+        public ICommand PreviousBookmarkCommand { get; }
+        public ICommand ClearBookmarksCommand { get; }
         public ICommand ToggleDetailPanelCommand { get; }
         public ICommand AddExtensionFilterCommand { get; }
         public ICommand AddDateTimeFilterCommand { get; }
@@ -175,6 +178,9 @@ namespace MultiLogViewer.ViewModels
             CopyCommand = new RelayCommand(_ => CopySelectedLogEntry());
             GoToDateCommand = new RelayCommand(_ => OpenGoToDateDialog());
             ToggleBookmarkCommand = new RelayCommand(_ => ToggleBookmark());
+            NextBookmarkCommand = new RelayCommand(_ => NavigateBookmark(true));
+            PreviousBookmarkCommand = new RelayCommand(_ => NavigateBookmark(false));
+            ClearBookmarksCommand = new RelayCommand(_ => ClearBookmarks());
             ToggleDetailPanelCommand = new RelayCommand(_ => IsDetailPanelVisible = !IsDetailPanelVisible);
             AddExtensionFilterCommand = new RelayCommand(param => AddExtensionFilter(param as string));
             AddDateTimeFilterCommand = new RelayCommand(param => AddDateTimeFilter(param));
@@ -366,74 +372,81 @@ namespace MultiLogViewer.ViewModels
         }
 
         private void OpenGoToDateDialog()
-
         {
-
             var initialDate = SelectedLogEntry?.Timestamp ?? DateTime.Now;
 
-
-
             // クリップボードに日時があればそれを優先する
-
             var clipboardText = _clipboardService.GetText();
-
             var parsedDate = DateTimeParser.TryParse(clipboardText);
-
             if (parsedDate.HasValue)
-
             {
-
                 initialDate = parsedDate.Value;
-
             }
-
-
 
             var timestampConfig = DisplayColumns.FirstOrDefault(c => c.BindingPath == "Timestamp");
-
             var isSecondsEnabled = timestampConfig?.StringFormat?.Contains("s") ?? true;
-
-
-
             var viewModel = new GoToDateViewModel(initialDate, isSecondsEnabled);
 
-
-
             _goToDateDialogService.Show(viewModel, (targetDateTime) =>
-
             {
-
                 var targetEntry = _logSearchService.FindByDateTime(LogEntriesView.Cast<LogEntry>(), targetDateTime);
-
                 if (targetEntry != null)
-
                 {
-
                     SelectedLogEntry = targetEntry;
-
                 }
-
             });
-
         }
-
-
 
         private void ToggleBookmark()
-
         {
-
             if (SelectedLogEntry != null)
-
             {
-
                 SelectedLogEntry.IsBookmarked = !SelectedLogEntry.IsBookmarked;
-
             }
-
         }
 
+        private void NavigateBookmark(bool forward)
+        {
+            var entries = LogEntriesView.Cast<LogEntry>().ToList();
+            if (!entries.Any()) return;
 
+            var bookmarkedEntries = entries.Where(e => e.IsBookmarked).ToList();
+
+            if (!bookmarkedEntries.Any()) return;
+
+            int currentIndex = entries.IndexOf(SelectedLogEntry!);
+            LogEntry? nextEntry = null;
+
+            if (forward)
+            {
+                // 次のブックマーク（現在位置より後ろ）を探す
+                nextEntry = bookmarkedEntries.FirstOrDefault(e => entries.IndexOf(e) > currentIndex);
+
+                // 見つからなければ先頭に戻る
+                nextEntry ??= bookmarkedEntries.First();
+            }
+            else
+            {
+                // 前のブックマーク（現在位置より前）を探す
+                nextEntry = bookmarkedEntries.LastOrDefault(e => entries.IndexOf(e) < currentIndex);
+
+                // 見つからなければ末尾に戻る
+                nextEntry ??= bookmarkedEntries.Last();
+            }
+
+            if (nextEntry != null)
+            {
+                SelectedLogEntry = nextEntry;
+            }
+        }
+
+        private void ClearBookmarks()
+        {
+            foreach (var entry in _logEntries)
+            {
+                entry.IsBookmarked = false;
+            }
+        }
 
         private void OpenSearch()
         {

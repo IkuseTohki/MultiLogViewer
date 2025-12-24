@@ -54,6 +54,10 @@
         <KeyBinding Key="B"
                     Command="{Binding ToggleBookmarkCommand}"
                     Modifiers="Control" />
+        <KeyBinding Key="F2" Command="{Binding NextBookmarkCommand}" />
+        <KeyBinding Key="F2"
+                    Command="{Binding PreviousBookmarkCommand}"
+                    Modifiers="Shift" />
         <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
     </Window.InputBindings>
     <DockPanel>

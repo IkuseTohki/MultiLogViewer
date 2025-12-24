@@ -652,6 +652,71 @@ namespace MultiLogViewer.Tests
             Assert.IsFalse(entry.IsBookmarked, "Should be unmarked");
         }
 
+        [TestMethod]
+        public async Task FindNextBookmarkCommand_SelectsNextMarkedEntry()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            var logs = new List<LogEntry>
+            {
+                new LogEntry { Message = "1", IsBookmarked = true },
+                new LogEntry { Message = "2" },
+                new LogEntry { Message = "3", IsBookmarked = true }
+            };
+            await SetLogsToViewModel(_viewModel, logs);
+            _viewModel.SelectedLogEntry = logs[0];
+
+            // Act
+            _viewModel.NextBookmarkCommand.Execute(null);
+
+            // Assert
+            Assert.AreEqual(logs[2], _viewModel.SelectedLogEntry, "Should jump to the next bookmarked entry.");
+
+            // Act 2: Wrap around
+            _viewModel.NextBookmarkCommand.Execute(null);
+            Assert.AreEqual(logs[0], _viewModel.SelectedLogEntry, "Should wrap around to the first bookmarked entry.");
+        }
+
+        [TestMethod]
+        public async Task FindPreviousBookmarkCommand_SelectsPreviousMarkedEntry()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            var logs = new List<LogEntry>
+            {
+                new LogEntry { Message = "1", IsBookmarked = true },
+                new LogEntry { Message = "2" },
+                new LogEntry { Message = "3", IsBookmarked = true }
+            };
+            await SetLogsToViewModel(_viewModel, logs);
+            _viewModel.SelectedLogEntry = logs[2];
+
+            // Act
+            _viewModel.PreviousBookmarkCommand.Execute(null);
+
+            // Assert
+            Assert.AreEqual(logs[0], _viewModel.SelectedLogEntry, "Should jump to the previous bookmarked entry.");
+        }
+
+        [TestMethod]
+        public async Task ClearBookmarksCommand_RemovesAllMarks()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            var logs = new List<LogEntry>
+            {
+                new LogEntry { Message = "1", IsBookmarked = true },
+                new LogEntry { Message = "2", IsBookmarked = true }
+            };
+            await SetLogsToViewModel(_viewModel, logs);
+
+            // Act
+            _viewModel.ClearBookmarksCommand.Execute(null);
+
+            // Assert
+            Assert.IsFalse(logs.Any(l => l.IsBookmarked), "All bookmarks should be cleared.");
+        }
+
         private async Task SetLogsToViewModel(MainViewModel vm, List<LogEntry> logs)
         {
             var result = new LogDataResult(logs, new List<DisplayColumnConfig>(), new List<FileState>());
