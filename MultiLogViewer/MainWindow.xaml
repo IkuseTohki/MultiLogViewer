@@ -59,7 +59,7 @@
                         <Button Grid.Column="0"
                                 Width="24"
                                 Height="24"
-                                Click="AddFilterButton_Click"
+                                behaviors:ButtonContextMenuBehavior.IsEnabled="True"
                                 Style="{StaticResource IconButtonStyle}"
                                 ToolTip="拡張フィルター">
                             <Button.ContextMenu>
