@@ -132,6 +132,7 @@ namespace MultiLogViewer.ViewModels
         public ICommand AddBookmarkFilterCommand { get; }
         public ICommand ToggleBookmarkPanelCommand { get; }
         public ICommand ToggleDetailPanelCommand { get; }
+        public ICommand OpenDigestCommand { get; }
         public ICommand AddExtensionFilterCommand { get; }
         public ICommand AddDateTimeFilterCommand { get; }
         public ICommand RemoveExtensionFilterCommand { get; }
@@ -199,6 +200,7 @@ namespace MultiLogViewer.ViewModels
             AddBookmarkFilterCommand = new RelayCommand(_ => AddBookmarkFilter());
             ToggleBookmarkPanelCommand = new RelayCommand(_ => IsBookmarkPanelVisible = !IsBookmarkPanelVisible);
             ToggleDetailPanelCommand = new RelayCommand(_ => IsDetailPanelVisible = !IsDetailPanelVisible);
+            OpenDigestCommand = new RelayCommand(_ => OpenDigest());
             AddExtensionFilterCommand = new RelayCommand(param => AddExtensionFilter(param as string));
             AddDateTimeFilterCommand = new RelayCommand(param => AddDateTimeFilter(param));
             RemoveExtensionFilterCommand = new RelayCommand(param => RemoveExtensionFilter(param as LogFilter));
@@ -471,6 +473,24 @@ namespace MultiLogViewer.ViewModels
             {
                 _activeExtensionFilters.Add(newFilter);
             }
+        }
+
+        private void OpenDigest()
+        {
+            var bookmarked = _logEntries.Where(e => e.IsBookmarked).ToList();
+            if (!bookmarked.Any())
+            {
+                _userDialogService.ShowError("ダイジェスト", "ブックマークされた行がありません。");
+                return;
+            }
+
+            var digestVm = new DigestViewModel(bookmarked);
+            var window = new DigestWindow
+            {
+                DataContext = digestVm,
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+            window.Show();
         }
 
         private void OpenSearch()

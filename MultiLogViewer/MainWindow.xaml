@@ -410,12 +410,22 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0"
-                               Margin="0,0,0,10"
-                               FontSize="14"
-                               FontWeight="Bold"
-                               Foreground="{StaticResource PrimaryHueMidBrush}"
-                               Text="Bookmarks" />
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock FontSize="14"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource PrimaryHueMidBrush}"
+                                   Text="Bookmarks" />
+                        <Button HorizontalAlignment="Right"
+                                Command="{Binding OpenDigestCommand}"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip="Show Analysis Digest">
+                            <Path Width="14"
+                                  Height="14"
+                                  Data="{StaticResource MultilineIconGeometry}"
+                                  Fill="{StaticResource PrimaryHueMidBrush}"
+                                  Stretch="Uniform" />
+                        </Button>
+                    </Grid>
 
                     <!-- Memo Editor -->
                     <StackPanel Grid.Row="1"

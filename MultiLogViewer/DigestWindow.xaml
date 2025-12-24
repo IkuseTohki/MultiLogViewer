@@ -1,0 +1,80 @@
+﻿<Window x:Class="MultiLogViewer.DigestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:MultiLogViewer"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:MultiLogViewer.Models"
+        Title="Analysis Digest"
+        Width="800"
+        Height="400"
+        Background="{StaticResource WindowBackgroundBrush}"
+        WindowStartupLocation="CenterOwner"
+        mc:Ignorable="d">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/DefaultStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Margin="0,0,0,10"
+                   FontSize="16"
+                   FontWeight="Bold"
+                   Foreground="{StaticResource PrimaryHueMidBrush}"
+                   Text="Bookmark Timeline Digest" />
+
+        <DataGrid Grid.Row="1"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  HeadersVisibility="Column"
+                  IsReadOnly="True"
+                  ItemsSource="{Binding DigestEntries}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Width="150"
+                                    Binding="{Binding Entry.Timestamp, StringFormat='yyyy/MM/dd HH:mm:ss'}"
+                                    Header="Timestamp" />
+                <DataGridTextColumn Width="100"
+                                    Binding="{Binding DeltaText}"
+                                    Header="Delta (Δt)">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="DimGray" />
+                            <Setter Property="HorizontalAlignment" Value="Right" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Width="80"
+                                    Binding="{Binding TotalElapsedText}"
+                                    Header="Cumulative">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Width="150"
+                                    Binding="{Binding Entry.Message}"
+                                    Header="Message" />
+                <DataGridTextColumn Width="*"
+                                    Binding="{Binding Entry.BookmarkMemo}"
+                                    Header="Memo">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontStyle" Value="Italic" />
+                            <Setter Property="Foreground" Value="{StaticResource PrimaryHueMidBrush}" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>
