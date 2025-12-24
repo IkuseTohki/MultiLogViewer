@@ -47,8 +47,8 @@ namespace MultiLogViewer.Tests
             _mockConfigLoader.Setup(l => l.Load(configPath)).Returns(appConfig);
             _mockFileResolver.Setup(r => r.Resolve(It.IsAny<List<string>>())).Returns(new List<string> { "file.log" });
 
-            // LogService changed to use ReadIncremental instead of ReadFiles
-            _mockLogFileReader.Setup(r => r.ReadIncremental(It.IsAny<FileState>(), It.IsAny<LogFormatConfig>()))
+            // LogService changed to use ReadIncremental with IEnumerable<LogFormatConfig>
+            _mockLogFileReader.Setup(r => r.ReadIncremental(It.IsAny<FileState>(), It.IsAny<IEnumerable<LogFormatConfig>>()))
                 .Returns((logs, new FileState("file.log", 100, 2)));
 
             // Act

@@ -255,6 +255,40 @@ log_formats:
 - `log_formats` の下に、それぞれのログファイルのルールをリスト形式で追加していくだけです。
 - MultiLogViewer は、それぞれのルールに合ったログファイルを見つけ出し、パースしてくれます。
 
+#### ケース 5: 1 つのファイルに複数の形式が混ざっている場合 (新機能！)
+
+1 つのログファイルの中に、アプリケーションのログとシステム（OS やミドルウェア）のログが混ざって出力されているような場合でも対応できます。
+
+**ログの例 (mixed.log):**
+
+```log
+2023-10-26 10:30:00 [INFO] <UserA> Application started.
+2023/10/26 10:30:05 [WARN] (PID:1234) System resource low.
+```
+
+**`config.yaml` の設定:**
+同じファイルパス (`mixed.log`) に対して、2 つのフォーマット定義を書きます。
+
+```yaml
+log_formats:
+  - name: "アプリログ形式"
+    log_file_patterns:
+      - "C:\\Logs\\mixed.log"
+    pattern: "^(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}) \\[(?<level>\\w+)\\] <(?<user>\\w+)> (?<message>.*)$"
+    timestamp_format: "yyyy-MM-dd HH:mm:ss"
+
+  - name: "システムログ形式"
+    log_file_patterns:
+      - "C:\\Logs\\mixed.log" # 同じファイルを指定！
+    pattern: "^(?<timestamp>\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) \\[(?<level>\\w+)\\] \\(PID:(?<pid>\\d+)\\) (?<message>.*)$"
+    timestamp_format: "yyyy/MM/dd HH:mm:ss"
+```
+
+**解説:**
+
+- MultiLogViewer は、上から順番にパターンを試し、最初にマッチしたルールで読み込みます。
+- `UserA` は `AdditionalData[user]` に、`1234` は `AdditionalData[pid]` に入ります。これらを `display_columns` で並べて表示できます。
+
 ---
 
 ## 🌟 まとめと次のステップ

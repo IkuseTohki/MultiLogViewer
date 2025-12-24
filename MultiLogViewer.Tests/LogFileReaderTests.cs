@@ -287,5 +287,44 @@ namespace MultiLogViewer.Tests
             Assert.AreEqual(state.FilePath, updatedState.FilePath);
             Assert.AreEqual(state.LastPosition, updatedState.LastPosition);
         }
+
+        [TestMethod]
+        public void Read_MixedFormats_ReturnsCorrectEntries()
+        {
+            // Arrange
+            // 2つの異なるフォーマット設定
+            var config1 = new LogFormatConfig
+            {
+                Name = "AppLog",
+                Pattern = @"^APP (?<message>.*)$",
+                IsMultiline = false
+            };
+            var config2 = new LogFormatConfig
+            {
+                Name = "SysLog",
+                Pattern = @"^SYS (?<message>.*)$",
+                IsMultiline = false
+            };
+            var configs = new List<LogFormatConfig> { config1, config2 };
+
+            var logLines = new[]
+            {
+                "APP Application started",
+                "SYS System initialization",
+                "APP User action",
+                "UNKNOWN Line" // どちらにもマッチしない
+            };
+            var testLogFile = Path.Combine(_tempDirectory, "mixed.log");
+            File.WriteAllLines(testLogFile, logLines);
+
+            // Act
+            var logEntries = _reader.Read(testLogFile, configs).ToList();
+
+            // Assert
+            Assert.AreEqual(3, logEntries.Count);
+            Assert.AreEqual("Application started", logEntries[0].Message);
+            Assert.AreEqual("System initialization", logEntries[1].Message);
+            Assert.AreEqual("User action", logEntries[2].Message);
+        }
     }
 }

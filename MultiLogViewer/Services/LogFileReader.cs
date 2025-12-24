@@ -6,19 +6,56 @@ using Ude;
 
 namespace MultiLogViewer.Services
 {
+    /// <summary>
+    /// ログファイルを読み込むためのリーダー実装です。
+    /// </summary>
     public class LogFileReader : ILogFileReader
     {
         public LogFileReader()
         {
         }
 
+        // --- 単一設定の実装（複数設定版へ委譲） ---
+
+        /// <inheritdoc />
         public IEnumerable<LogEntry> Read(string filePath, LogFormatConfig config)
         {
-            var (entries, _) = ReadInternal(filePath, 0, 0, config);
+            return Read(filePath, new[] { config });
+        }
+
+        /// <inheritdoc />
+        public (IEnumerable<LogEntry> Entries, FileState UpdatedState) ReadIncremental(FileState currentState, LogFormatConfig config)
+        {
+            return ReadIncremental(currentState, new[] { config });
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<LogEntry> ReadFiles(IEnumerable<string> filePaths, LogFormatConfig config)
+        {
+            if (filePaths == null || !filePaths.Any())
+            {
+                return Enumerable.Empty<LogEntry>();
+            }
+
+            var allLogEntries = new List<LogEntry>();
+            foreach (var filePath in filePaths)
+            {
+                allLogEntries.AddRange(Read(filePath, config));
+            }
+            return allLogEntries;
+        }
+
+        // --- 複数設定の実装 ---
+
+        /// <inheritdoc />
+        public IEnumerable<LogEntry> Read(string filePath, IEnumerable<LogFormatConfig> configs)
+        {
+            var (entries, _) = ReadInternal(filePath, 0, 0, configs);
             return entries;
         }
 
-        public (IEnumerable<LogEntry> Entries, FileState UpdatedState) ReadIncremental(FileState currentState, LogFormatConfig config)
+        /// <inheritdoc />
+        public (IEnumerable<LogEntry> Entries, FileState UpdatedState) ReadIncremental(FileState currentState, IEnumerable<LogFormatConfig> configs)
         {
             if (!File.Exists(currentState.FilePath))
             {
@@ -28,8 +65,8 @@ namespace MultiLogViewer.Services
             var fileInfo = new FileInfo(currentState.FilePath);
             if (fileInfo.Length < currentState.LastPosition)
             {
-                // ファイルが小さくなった（ローテーション等）場合は最初から読み直す
-                var (entries, newState) = ReadInternal(currentState.FilePath, 0, 0, config);
+                // ファイルサイズが小さくなった（ローテーションなど）場合は、最初から読み直します。
+                var (entries, newState) = ReadInternal(currentState.FilePath, 0, 0, configs);
                 return (entries, newState);
             }
 
@@ -38,25 +75,39 @@ namespace MultiLogViewer.Services
                 return (Enumerable.Empty<LogEntry>(), currentState);
             }
 
-            var (newEntries, updatedState) = ReadInternal(currentState.FilePath, currentState.LastPosition, currentState.LastLineNumber, config);
+            var (newEntries, updatedState) = ReadInternal(currentState.FilePath, currentState.LastPosition, currentState.LastLineNumber, configs);
             return (newEntries, updatedState);
         }
 
-        private (IEnumerable<LogEntry> Entries, FileState State) ReadInternal(string filePath, long startPosition, int startLineNumber, LogFormatConfig config)
+        /// <summary>
+        /// ログファイルを指定された位置から読み込み、パーサーを適用して解析する内部メソッドです。
+        /// </summary>
+        /// <param name="filePath">対象ファイルのパス。</param>
+        /// <param name="startPosition">読み込み開始位置（バイト）。</param>
+        /// <param name="startLineNumber">読み込み開始行番号。</param>
+        /// <param name="configs">適用するログフォーマット設定のリスト。</param>
+        /// <returns>解析されたログエントリと、読み込み後のファイル状態のタプル。</returns>
+        private (IEnumerable<LogEntry> Entries, FileState State) ReadInternal(string filePath, long startPosition, int startLineNumber, IEnumerable<LogFormatConfig> configs)
         {
             if (!File.Exists(filePath))
             {
                 return (Enumerable.Empty<LogEntry>(), new FileState(filePath, 0, 0));
             }
 
-            var parser = new LogParser(config);
+            // CompositeLogParser の準備（複数のフォーマット候補を順次試行します）
+            var parsers = configs.Select(c => new LogParser(c)).Cast<ILogParser>().ToList();
+            var parser = new CompositeLogParser(parsers);
+
+            // マルチライン設定：いずれかのフォーマット設定で有効であれば、有効とみなします。
+            bool isMultiline = configs.Any(c => c.IsMultiline);
+
             var results = new List<LogEntry>();
             long endPosition = startPosition;
             int currentLineNumber = startLineNumber;
 
             using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                // エンコーディングを自動判別
+                // エンコーディングを自動判別します。
                 System.Text.Encoding encoding = DetectFileEncoding(fs);
                 fs.Seek(startPosition, SeekOrigin.Begin);
 
@@ -73,6 +124,7 @@ namespace MultiLogViewer.Services
 
                         if (entry != null)
                         {
+                            // 新しいログの開始を検知したため、直前のエントリを確定させます。
                             if (currentEntry != null)
                             {
                                 results.Add(currentEntry);
@@ -81,8 +133,9 @@ namespace MultiLogViewer.Services
                             entry.FileFullPath = filePath;
                             currentEntry = entry;
                         }
-                        else if (currentEntry != null && config.IsMultiline)
+                        else if (currentEntry != null && isMultiline)
                         {
+                            // どのフォーマットにも一致しない行を、直前のエントリの継続行として結合します。
                             currentEntry.Message += System.Environment.NewLine + line;
                             currentEntry.RawLine += System.Environment.NewLine + line;
                         }
@@ -93,9 +146,7 @@ namespace MultiLogViewer.Services
                         results.Add(currentEntry);
                     }
 
-                    // 読み込み終わった時点のストリームの絶対位置を取得する
-                    // 注意: StreamReaderがバッファリングしているため、fs.Positionではなく工夫が必要
-                    // 簡易的にfs.Lengthを使うか、自前でバイト数を計算するが、ここではfs.Lengthを最終位置とする
+                    // 読み込み完了時点のファイル末尾位置を記録します。
                     endPosition = fs.Length;
                 }
             }
@@ -106,58 +157,43 @@ namespace MultiLogViewer.Services
         /// <summary>
         /// ファイルの文字コードを自動判別します。
         /// </summary>
-        /// <param name="fileStream">判別するファイルのFileStream。</param>
-        /// <returns>判別された文字コード。判別できなかった場合はUTF8を返します。</returns>
+        /// <param name="fileStream">判別対象となるファイルの FileStream。</param>
+        /// <returns>判別された文字コード。判別できない場合は UTF-8 を返します。</returns>
         private System.Text.Encoding DetectFileEncoding(FileStream fileStream)
         {
             var cdet = new CharsetDetector();
-            cdet.Feed(fileStream); // ここでストリームの一部を読み込む
+            cdet.Feed(fileStream);
             cdet.DataEnd();
 
             if (cdet.Charset != null)
             {
-                // Shift-JIS の場合は明示的にコードページ 932 を指定
+                // Shift-JIS の場合は、Windows-31J (コードページ 932) として扱います。
                 if (cdet.Charset.Equals("Shift-JIS", System.StringComparison.OrdinalIgnoreCase))
                 {
                     try
                     {
-                        return System.Text.Encoding.GetEncoding(932); // コードページ932 (Shift-JIS) を試す
+                        return System.Text.Encoding.GetEncoding(932);
                     }
                     catch (System.ArgumentException)
                     {
-                        return System.Text.Encoding.UTF8; // フォールバック
+                        return System.Text.Encoding.UTF8;
                     }
                 }
 
                 try
                 {
-                    string detectedCharset = cdet.Charset; // ローカル変数に代入し、nullではないことを保証
-                    string charsetName = detectedCharset.Replace('-', '_'); // ハイフンをアンダースコアに変換
+                    string detectedCharset = cdet.Charset;
+                    string charsetName = detectedCharset.Replace('-', '_');
                     return System.Text.Encoding.GetEncoding(charsetName);
                 }
                 catch (System.ArgumentException)
                 {
-                    // サポートされていないエンコーディングの場合はUTF8をフォールバック
+                    // 未対応のエンコーディングの場合は UTF-8 をフォールバックとして使用します。
                     return System.Text.Encoding.UTF8;
                 }
             }
-            // 判別できなかった場合はUTF8を返す
+
             return System.Text.Encoding.UTF8;
-        }
-
-        public IEnumerable<LogEntry> ReadFiles(IEnumerable<string> filePaths, LogFormatConfig config)
-        {
-            if (filePaths == null || !filePaths.Any())
-            {
-                return Enumerable.Empty<LogEntry>();
-            }
-
-            var allLogEntries = new List<LogEntry>();
-            foreach (var filePath in filePaths)
-            {
-                allLogEntries.AddRange(Read(filePath, config));
-            }
-            return allLogEntries;
         }
     }
 }

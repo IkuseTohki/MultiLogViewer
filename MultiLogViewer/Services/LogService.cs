@@ -33,18 +33,18 @@ namespace MultiLogViewer.Services
 
             if (appConfig.LogFormats != null)
             {
-                foreach (var logFormatConfig in appConfig.LogFormats)
+                // ファイルパスごとのConfigリストを作成
+                var fileConfigs = ResolveFileConfigs(appConfig.LogFormats);
+
+                // ファイルごとに読み込み
+                foreach (var kvp in fileConfigs)
                 {
-                    if (logFormatConfig.LogFilePatterns != null && logFormatConfig.LogFilePatterns.Any())
-                    {
-                        var filePaths = _fileResolver.Resolve(logFormatConfig.LogFilePatterns);
-                        foreach (var path in filePaths)
-                        {
-                            var (entries, state) = _logFileReader.ReadIncremental(new FileState(path, 0, 0), logFormatConfig);
-                            allEntries.AddRange(entries);
-                            fileStates.Add(state);
-                        }
-                    }
+                    var path = kvp.Key;
+                    var configs = kvp.Value;
+
+                    var (entries, state) = _logFileReader.ReadIncremental(new FileState(path, 0, 0), configs);
+                    allEntries.AddRange(entries);
+                    fileStates.Add(state);
                 }
             }
 
@@ -78,21 +78,20 @@ namespace MultiLogViewer.Services
             var newEntries = new List<LogEntry>();
             var updatedStates = new List<FileState>();
 
-            // 各設定フォーマットに対して、対象ファイルを特定
-            foreach (var logFormatConfig in appConfig.LogFormats)
+            // ファイルパスごとのConfigリストを作成
+            var fileConfigs = ResolveFileConfigs(appConfig.LogFormats);
+
+            // ファイルごとに読み込み
+            foreach (var kvp in fileConfigs)
             {
-                if (logFormatConfig.LogFilePatterns == null || !logFormatConfig.LogFilePatterns.Any()) continue;
+                var path = kvp.Key;
+                var configs = kvp.Value;
 
-                var filePaths = _fileResolver.Resolve(logFormatConfig.LogFilePatterns);
-                foreach (var path in filePaths)
-                {
-                    // 現在の状態を見つける
-                    var currentState = currentStates.FirstOrDefault(s => s.FilePath == path) ?? new FileState(path, 0, 0);
+                var currentState = currentStates.FirstOrDefault(s => s.FilePath == path) ?? new FileState(path, 0, 0);
 
-                    var (entries, state) = _logFileReader.ReadIncremental(currentState, logFormatConfig);
-                    newEntries.AddRange(entries);
-                    updatedStates.Add(state);
-                }
+                var (entries, state) = _logFileReader.ReadIncremental(currentState, configs);
+                newEntries.AddRange(entries);
+                updatedStates.Add(state);
             }
 
             // まだ処理していない（設定から消えた？）状態も引き継ぐ（オプション）
@@ -105,6 +104,29 @@ namespace MultiLogViewer.Services
             }
 
             return new LogDataResult(newEntries, new List<DisplayColumnConfig>(), updatedStates, appConfig.PollingIntervalMs);
+        }
+
+        private Dictionary<string, List<LogFormatConfig>> ResolveFileConfigs(IEnumerable<LogFormatConfig> logFormats)
+        {
+            var fileConfigs = new Dictionary<string, List<LogFormatConfig>>();
+
+            foreach (var logFormatConfig in logFormats)
+            {
+                if (logFormatConfig.LogFilePatterns != null && logFormatConfig.LogFilePatterns.Any())
+                {
+                    var filePaths = _fileResolver.Resolve(logFormatConfig.LogFilePatterns);
+                    foreach (var path in filePaths)
+                    {
+                        if (!fileConfigs.ContainsKey(path))
+                        {
+                            fileConfigs[path] = new List<LogFormatConfig>();
+                        }
+                        fileConfigs[path].Add(logFormatConfig);
+                    }
+                }
+            }
+
+            return fileConfigs;
         }
     }
 }
