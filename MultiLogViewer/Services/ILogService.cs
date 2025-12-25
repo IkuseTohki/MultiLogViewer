@@ -20,7 +20,8 @@ namespace MultiLogViewer.Services
         /// </summary>
         /// <param name="configPath">設定ファイルのパス。</param>
         /// <param name="currentStates">前回の読み込み時のファイル状態一覧。</param>
+        /// <param name="startSequenceNumber">割り当てを開始するシーケンス番号の開始値。</param>
         /// <returns>新規追加されたログエントリと更新されたファイル状態を含む結果オブジェクト。</returns>
-        LogDataResult LoadIncremental(string configPath, List<FileState> currentStates);
+        LogDataResult LoadIncremental(string configPath, List<FileState> currentStates, long startSequenceNumber);
     }
 }

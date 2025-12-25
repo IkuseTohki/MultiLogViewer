@@ -174,6 +174,7 @@ namespace MultiLogViewer.ViewModels
 
             LogEntriesView = new ListCollectionView(_logEntries);
             LogEntriesView.SortDescriptions.Add(new System.ComponentModel.SortDescription("Timestamp", System.ComponentModel.ListSortDirection.Ascending));
+            LogEntriesView.SortDescriptions.Add(new System.ComponentModel.SortDescription("SequenceNumber", System.ComponentModel.ListSortDirection.Ascending));
             LogEntriesView.Filter = FilterLogEntries;
 
             BookmarkedEntries = new ListCollectionView(_logEntries);
@@ -296,7 +297,7 @@ namespace MultiLogViewer.ViewModels
         {
             if (string.IsNullOrEmpty(_configPath)) return;
 
-            var result = _logService.LoadIncremental(_configPath, _fileStates);
+            var result = _logService.LoadIncremental(_configPath, _fileStates, _logEntries.Count);
             _fileStates = result.FileStates;
 
             if (result.Entries.Any())

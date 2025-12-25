@@ -12,6 +12,7 @@ namespace MultiLogViewer.Models
         public string FileName { get; set; } = string.Empty;
         public string FileFullPath { get; set; } = string.Empty;
         public int LineNumber { get; set; }
+        public long SequenceNumber { get; set; }
         public Dictionary<string, string> AdditionalData { get; set; } = new Dictionary<string, string>();
 
         private bool _isBookmarked;

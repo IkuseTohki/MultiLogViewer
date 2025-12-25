@@ -30,6 +30,7 @@ namespace MultiLogViewer.Services
 
             var allEntries = new List<LogEntry>();
             var fileStates = new List<FileState>();
+            long currentSequence = 0;
 
             if (appConfig.LogFormats != null)
             {
@@ -43,12 +44,18 @@ namespace MultiLogViewer.Services
                     var configs = kvp.Value;
 
                     var (entries, state) = _logFileReader.ReadIncremental(new FileState(path, 0, 0), configs);
+
+                    foreach (var entry in entries)
+                    {
+                        entry.SequenceNumber = currentSequence++;
+                    }
+
                     allEntries.AddRange(entries);
                     fileStates.Add(state);
                 }
             }
 
-            var sortedEntries = allEntries.OrderBy(e => e.Timestamp).ToList();
+            var sortedEntries = allEntries.OrderBy(e => e.Timestamp).ThenBy(e => e.SequenceNumber).ToList();
             var displayColumns = appConfig.DisplayColumns?.ToList() ?? new List<DisplayColumnConfig>();
 
             // ColumnStyles を DisplayColumns に紐付け
@@ -67,7 +74,7 @@ namespace MultiLogViewer.Services
             return new LogDataResult(sortedEntries, displayColumns, fileStates, appConfig.PollingIntervalMs);
         }
 
-        public LogDataResult LoadIncremental(string configPath, List<FileState> currentStates)
+        public LogDataResult LoadIncremental(string configPath, List<FileState> currentStates, long startSequenceNumber)
         {
             var appConfig = _logFormatConfigLoader.Load(configPath);
             if (appConfig == null || appConfig.LogFormats == null)
@@ -77,6 +84,7 @@ namespace MultiLogViewer.Services
 
             var newEntries = new List<LogEntry>();
             var updatedStates = new List<FileState>();
+            long currentSequence = startSequenceNumber;
 
             // ファイルパスごとのConfigリストを作成
             var fileConfigs = ResolveFileConfigs(appConfig.LogFormats);
@@ -90,6 +98,12 @@ namespace MultiLogViewer.Services
                 var currentState = currentStates.FirstOrDefault(s => s.FilePath == path) ?? new FileState(path, 0, 0);
 
                 var (entries, state) = _logFileReader.ReadIncremental(currentState, configs);
+
+                foreach (var entry in entries)
+                {
+                    entry.SequenceNumber = currentSequence++;
+                }
+
                 newEntries.AddRange(entries);
                 updatedStates.Add(state);
             }
@@ -103,7 +117,7 @@ namespace MultiLogViewer.Services
                 }
             }
 
-            return new LogDataResult(newEntries, new List<DisplayColumnConfig>(), updatedStates, appConfig.PollingIntervalMs);
+            return new LogDataResult(newEntries.OrderBy(e => e.Timestamp).ThenBy(e => e.SequenceNumber).ToList(), new List<DisplayColumnConfig>(), updatedStates, appConfig.PollingIntervalMs);
         }
 
         private Dictionary<string, List<LogFormatConfig>> ResolveFileConfigs(IEnumerable<LogFormatConfig> logFormats)
