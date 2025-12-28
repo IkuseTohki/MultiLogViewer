@@ -8,6 +8,11 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\MultiLogViewer.ico</ApplicationIcon>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
+    <Company>MultiLogViewer Project</Company>
+    <Product>MultiLogViewer</Product>
   </PropertyGroup>
 
   <ItemGroup>
