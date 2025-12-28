@@ -7,6 +7,7 @@
         Height="Auto"
         behaviors:DialogCloser.DialogResult="{Binding DialogResult}"
         Background="{StaticResource WindowBackgroundBrush}"
+        Icon="{StaticResource AppIcon}"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         SizeToContent="Height"

@@ -9,6 +9,7 @@
         Width="800"
         Height="400"
         Background="{StaticResource WindowBackgroundBrush}"
+        Icon="{StaticResource AppIcon}"
         WindowStartupLocation="CenterOwner"
         mc:Ignorable="d">
     <Window.Resources>

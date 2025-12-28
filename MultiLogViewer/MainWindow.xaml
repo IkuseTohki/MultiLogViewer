@@ -12,6 +12,7 @@
         Width="1000"
         Height="600"
         Background="{StaticResource WindowBackgroundBrush}"
+        Icon="{StaticResource AppIcon}"
         mc:Ignorable="d">
     <Window.InputBindings>
         <KeyBinding Key="F"

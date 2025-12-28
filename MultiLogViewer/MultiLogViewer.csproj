@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\MultiLogViewer.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,6 +4,7 @@
         Title="Error"
         Width="600"
         Height="400"
+        Icon="{StaticResource AppIcon}"
         WindowStartupLocation="CenterScreen">
     <Grid Margin="10">
         <Grid.RowDefinitions>

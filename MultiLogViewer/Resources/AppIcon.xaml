@@ -1,0 +1,189 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DrawingImage x:Key="AppIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Background Stack -->
+                    <!-- Page 1 (Backmost) -->
+                    <GeometryDrawing Brush="#CFD8DC">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry RadiusX="8"
+                                               RadiusY="8"
+                                               Rect="48,25,140,180">
+                                <RectangleGeometry.Transform>
+                                    <RotateTransform Angle="-12" CenterX="118" CenterY="115" />
+                                </RectangleGeometry.Transform>
+                            </RectangleGeometry>
+                        </GeometryDrawing.Geometry>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#B0BEC5" Thickness="2" />
+                        </GeometryDrawing.Pen>
+                    </GeometryDrawing>
+
+                    <!-- Page 2 (Middle) -->
+                    <GeometryDrawing Brush="#ECEFF1">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry RadiusX="8"
+                                               RadiusY="8"
+                                               Rect="58,25,140,180">
+                                <RectangleGeometry.Transform>
+                                    <RotateTransform Angle="-6" CenterX="128" CenterY="115" />
+                                </RectangleGeometry.Transform>
+                            </RectangleGeometry>
+                        </GeometryDrawing.Geometry>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#B0BEC5" Thickness="2" />
+                        </GeometryDrawing.Pen>
+                    </GeometryDrawing>
+
+                    <!-- Page 3 (Frontmost) -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Brush>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Offset="0" Color="#CFD8DC" />
+                                <GradientStop Offset="1" Color="#90A4AE" />
+                            </LinearGradientBrush>
+                        </GeometryDrawing.Brush>
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry RadiusX="8"
+                                               RadiusY="8"
+                                               Rect="68,25,140,180" />
+                        </GeometryDrawing.Geometry>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#78909C" Thickness="2" />
+                        </GeometryDrawing.Pen>
+                    </GeometryDrawing>
+
+                    <!-- Lines on Front Page -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="White"
+                                 EndLineCap="Round"
+                                 StartLineCap="Round"
+                                 Thickness="6" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <GeometryGroup>
+                                <LineGeometry StartPoint="88,55" EndPoint="188,55" />
+                                <LineGeometry StartPoint="88,75" EndPoint="168,75" />
+                                <LineGeometry StartPoint="88,95" EndPoint="188,95" />
+                                <LineGeometry StartPoint="88,115" EndPoint="148,115" />
+                                <LineGeometry StartPoint="88,135" EndPoint="178,135" />
+                                <LineGeometry StartPoint="88,155" EndPoint="158,155" />
+                                <LineGeometry StartPoint="88,175" EndPoint="138,175" />
+                            </GeometryGroup>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- Lens Area (X-Ray Effect) -->
+                    <DrawingGroup>
+                        <DrawingGroup.ClipGeometry>
+                            <EllipseGeometry Center="135,120"
+                                             RadiusX="65"
+                                             RadiusY="65" />
+                        </DrawingGroup.ClipGeometry>
+                        <DrawingGroup.Children>
+                            <!-- Inside Lens Background -->
+                            <GeometryDrawing Brush="#E3F2FD">
+                                <GeometryDrawing.Geometry>
+                                    <RectangleGeometry Rect="0,0,256,256" />
+                                </GeometryDrawing.Geometry>
+                            </GeometryDrawing>
+                            <!-- Inside Lens Lines -->
+                            <DrawingGroup>
+                                <DrawingGroup.Transform>
+                                    <TransformGroup>
+                                        <TranslateTransform X="-10" Y="-10" />
+                                        <ScaleTransform ScaleX="1.1" ScaleY="1.1" />
+                                    </TransformGroup>
+                                </DrawingGroup.Transform>
+                                <GeometryDrawing Brush="#64B5F6">
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry RadiusX="2"
+                                                           RadiusY="2"
+                                                           Rect="88,55,100,8" />
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                                <GeometryDrawing Brush="#81C784">
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry RadiusX="2"
+                                                           RadiusY="2"
+                                                           Rect="88,75,80,8" />
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                                <GeometryDrawing Brush="#E57373">
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry RadiusX="2"
+                                                           RadiusY="2"
+                                                           Rect="88,95,100,8" />
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                                <GeometryDrawing Brush="#FFD54F">
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry RadiusX="2"
+                                                           RadiusY="2"
+                                                           Rect="88,115,60,8" />
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                                <GeometryDrawing Brush="#64B5F6">
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry RadiusX="2"
+                                                           RadiusY="2"
+                                                           Rect="88,135,90,8" />
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                                <GeometryDrawing Brush="#81C784">
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry RadiusX="2"
+                                                           RadiusY="2"
+                                                           Rect="88,155,70,8" />
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                            </DrawingGroup>
+                        </DrawingGroup.Children>
+                    </DrawingGroup>
+
+                    <!-- Lens Frame -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#1565C0" Thickness="10" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <EllipseGeometry Center="135,120"
+                                             RadiusX="65"
+                                             RadiusY="65" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- Lens Handle -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="#1565C0"
+                                 EndLineCap="Round"
+                                 StartLineCap="Round"
+                                 Thickness="18" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <LineGeometry StartPoint="185,170" EndPoint="225,210" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- Reflection -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Pen>
+                            <Pen Brush="White"
+                                 EndLineCap="Round"
+                                 StartLineCap="Round"
+                                 Thickness="5" />
+                        </GeometryDrawing.Pen>
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M100,90 Q 115,75 140,85" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+</ResourceDictionary>

@@ -10,6 +10,7 @@
         Height="28"
         AllowsTransparency="True"
         Background="Transparent"
+        Icon="{StaticResource AppIcon}"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         WindowStyle="None"
