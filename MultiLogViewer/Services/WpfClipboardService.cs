@@ -6,7 +6,21 @@ namespace MultiLogViewer.Services
     {
         public void SetText(string text)
         {
-            Clipboard.SetDataObject(text);
+            if (string.IsNullOrEmpty(text)) return;
+
+            // クリップボードが他アプリにロックされている場合を考慮し、リトライを行う
+            for (int i = 0; i < 5; i++)
+            {
+                try
+                {
+                    Clipboard.SetText(text);
+                    return;
+                }
+                catch (System.Runtime.InteropServices.COMException)
+                {
+                    System.Threading.Thread.Sleep(50);
+                }
+            }
         }
 
         public string? GetText()

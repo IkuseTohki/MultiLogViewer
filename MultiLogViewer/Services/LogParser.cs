@@ -33,9 +33,10 @@ namespace MultiLogViewer.Services
             };
 
             // Timestampのパース
-            if (match.Groups["timestamp"].Success)
+            var timestampGroup = FindGroup(match, "timestamp");
+            if (timestampGroup != null && timestampGroup.Success)
             {
-                var val = ApplyTransforms(match.Groups["timestamp"].Value, "timestamp", _config.FieldTransforms);
+                var val = ApplyTransforms(timestampGroup.Value, "timestamp", _config.FieldTransforms);
                 if (DateTime.TryParseExact(val, _config.TimestampFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime timestamp))
                 {
                     logEntry.Timestamp = timestamp;
@@ -51,16 +52,18 @@ namespace MultiLogViewer.Services
             }
 
             // Messageの取得
-            if (match.Groups["message"].Success)
+            var messageGroup = FindGroup(match, "message");
+            if (messageGroup != null && messageGroup.Success)
             {
-                logEntry.Message = ApplyTransforms(match.Groups["message"].Value, "message", _config.FieldTransforms);
+                logEntry.Message = ApplyTransforms(messageGroup.Value, "message", _config.FieldTransforms);
             }
 
             // その他のキャプチャグループをAdditionalDataに格納
             foreach (Group group in match.Groups)
             {
                 if (group.Name != "0" && group.Success &&
-                    group.Name != "timestamp" && group.Name != "message")
+                    !string.Equals(group.Name, "timestamp", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(group.Name, "message", StringComparison.OrdinalIgnoreCase))
                 {
                     logEntry.AdditionalData[group.Name] = ApplyTransforms(group.Value, group.Name, _config.FieldTransforms);
                 }
@@ -72,7 +75,7 @@ namespace MultiLogViewer.Services
                 foreach (var subPattern in _config.SubPatterns)
                 {
                     string sourceValue = string.Empty;
-                    if (subPattern.SourceField == "message")
+                    if (string.Equals(subPattern.SourceField, "message", StringComparison.OrdinalIgnoreCase))
                     {
                         sourceValue = logEntry.Message;
                     }
@@ -100,6 +103,18 @@ namespace MultiLogViewer.Services
             }
 
             return logEntry;
+        }
+
+        private Group? FindGroup(Match match, string groupName)
+        {
+            foreach (Group group in match.Groups)
+            {
+                if (string.Equals(group.Name, groupName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return group;
+                }
+            }
+            return null;
         }
 
         private string ApplyTransforms(string value, string fieldName, List<FieldTransformConfig> transforms)

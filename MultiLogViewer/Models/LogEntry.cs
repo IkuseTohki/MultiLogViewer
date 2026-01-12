@@ -15,6 +15,14 @@ namespace MultiLogViewer.Models
         public long SequenceNumber { get; set; }
         public Dictionary<string, string> AdditionalData { get; set; } = new Dictionary<string, string>();
 
+        /// <summary>
+        /// AdditionalData の値を安全に取得するためのインデクサです。
+        /// キーが存在しない場合は空文字を返します。
+        /// </summary>
+        /// <param name="key">追加データのキー名。</param>
+        /// <returns>対応する値、または空文字。</returns>
+        public string this[string key] => AdditionalData.TryGetValue(key, out var value) ? value : string.Empty;
+
         private bool _isBookmarked;
         public bool IsBookmarked
         {

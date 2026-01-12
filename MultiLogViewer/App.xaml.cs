@@ -69,6 +69,18 @@ namespace MultiLogViewer
                 // .NET Core/.NET 5+ で Shift-JIS などのコードページエンコーディングをサポートするために登録
                 System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
+                // 設定の読み込みとトレースログの設定
+                var appSettingsService = _serviceProvider.GetRequiredService<IAppSettingsService>();
+                var settings = appSettingsService.Load();
+                if (settings != null && settings.EnableTraceLog)
+                {
+                    var logPath = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "trace.log");
+                    var listener = new System.Diagnostics.TextWriterTraceListener(logPath);
+                    System.Diagnostics.Trace.Listeners.Add(listener);
+                    System.Diagnostics.Trace.AutoFlush = true;
+                    System.Diagnostics.Trace.WriteLine($"=== Trace Started: {System.DateTime.Now} ===");
+                }
+
                 var configPathResolver = _serviceProvider.GetRequiredService<IConfigPathResolver>();
                 var configPath = configPathResolver.ResolveLogProfilePath(e.Args);
 

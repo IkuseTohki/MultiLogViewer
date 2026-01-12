@@ -11,6 +11,9 @@ namespace MultiLogViewer.Models
         public string? LogRetentionLimit { get; set; }
 
         [YamlMember(Alias = "skip_tail_mode_warning")]
-        public bool SkipTailModeWarning { get; set; }
+        public bool SkipTailModeWarning { get; set; } = false;
+
+        [YamlMember(Alias = "enable_trace_log")]
+        public bool EnableTraceLog { get; set; } = false;
     }
 }

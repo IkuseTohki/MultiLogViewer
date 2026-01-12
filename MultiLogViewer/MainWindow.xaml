@@ -290,6 +290,7 @@
             <!-- Log DataGrid Container -->
             <Grid Grid.Column="0">
                 <DataGrid behaviors:DataGridColumnsBehavior.BindableColumns="{Binding DisplayColumns}"
+                          behaviors:DataGridCopyBehavior.CopyCommand="{Binding CopyCommand}"
                           behaviors:DataGridScrollToSelectionBehavior.AutoScrollOnCollectionChanged="True"
                           behaviors:DataGridScrollToSelectionBehavior.SelectedItem="{Binding SelectedLogEntry}"
                           behaviors:DataGridTailBehavior.ClearSortVisualsOnTail="{Binding IsTailEnabled}"
@@ -298,6 +299,7 @@
                           CanUserReorderColumns="True"
                           CanUserResizeColumns="True"
                           CanUserSortColumns="{Binding IsTailEnabled, Converter={StaticResource BooleanInvertConverter}}"
+                          ClipboardCopyMode="None"
                           HeadersVisibility="Column"
                           ItemsSource="{Binding LogEntriesView}"
                           SelectedItem="{Binding SelectedLogEntry, Mode=TwoWay}" />

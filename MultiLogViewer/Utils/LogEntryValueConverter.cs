@@ -9,6 +9,8 @@ namespace MultiLogViewer.Utils
     /// </summary>
     public static class LogEntryValueConverter
     {
+        private const string AdditionalDataPrefix = "AdditionalData[";
+
         /// <summary>
         /// 指定された列定義に基づいて、ログエントリから表示用の文字列を取得します。
         /// </summary>
@@ -32,29 +34,39 @@ namespace MultiLogViewer.Utils
             if (string.IsNullOrEmpty(bindingPath)) return string.Empty;
 
             object? rawValue = null;
+            string matchType = "None";
 
-            if (bindingPath == "Timestamp")
+            if (string.Equals(bindingPath, "Timestamp", StringComparison.OrdinalIgnoreCase))
             {
                 rawValue = entry.Timestamp;
+                matchType = "Timestamp";
             }
-            else if (bindingPath == "Message")
+            else if (string.Equals(bindingPath, "Message", StringComparison.OrdinalIgnoreCase))
             {
                 rawValue = entry.Message;
+                matchType = "Message";
             }
-            else if (bindingPath == "FileName")
+            else if (string.Equals(bindingPath, "FileName", StringComparison.OrdinalIgnoreCase))
             {
                 rawValue = entry.FileName;
+                matchType = "FileName";
             }
-            else if (bindingPath == "LineNumber")
+            else if (string.Equals(bindingPath, "LineNumber", StringComparison.OrdinalIgnoreCase))
             {
                 rawValue = entry.LineNumber;
+                matchType = "LineNumber";
             }
-            else if (bindingPath.StartsWith("AdditionalData[") && bindingPath.EndsWith("]"))
+            else if (bindingPath.StartsWith(AdditionalDataPrefix, StringComparison.OrdinalIgnoreCase) && bindingPath.EndsWith("]"))
             {
-                var key = bindingPath.Substring(15, bindingPath.Length - 16);
+                var key = bindingPath.Substring(AdditionalDataPrefix.Length, bindingPath.Length - AdditionalDataPrefix.Length - 1);
+                matchType = $"AdditionalData[{key}]";
                 if (entry.AdditionalData.TryGetValue(key, out var val))
                 {
                     rawValue = val;
+                }
+                else
+                {
+                    matchType += " (KeyNotFound)";
                 }
             }
 
@@ -76,11 +88,14 @@ namespace MultiLogViewer.Utils
         public static string? ExtractAdditionalDataKey(string bindingPath)
         {
             if (string.IsNullOrEmpty(bindingPath)) return null;
-            if (bindingPath == "Timestamp" || bindingPath == "Message" || bindingPath == "FileName" || bindingPath == "LineNumber") return null;
+            if (string.Equals(bindingPath, "Timestamp", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(bindingPath, "Message", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(bindingPath, "FileName", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(bindingPath, "LineNumber", StringComparison.OrdinalIgnoreCase)) return null;
 
-            if (bindingPath.StartsWith("AdditionalData[") && bindingPath.EndsWith("]"))
+            if (bindingPath.StartsWith(AdditionalDataPrefix, StringComparison.OrdinalIgnoreCase) && bindingPath.EndsWith("]"))
             {
-                return bindingPath.Substring(15, bindingPath.Length - 16);
+                return bindingPath.Substring(AdditionalDataPrefix.Length, bindingPath.Length - AdditionalDataPrefix.Length - 1);
             }
             return null;
         }

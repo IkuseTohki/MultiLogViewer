@@ -183,12 +183,13 @@ namespace MultiLogViewer.Services
                 try
                 {
                     string detectedCharset = cdet.Charset;
-                    string charsetName = detectedCharset.Replace('-', '_');
-                    return System.Text.Encoding.GetEncoding(charsetName);
+                    // ハイフンをアンダースコアに置換すると、標準的なエンコーディング名として認識されなくなるため削除
+                    return System.Text.Encoding.GetEncoding(detectedCharset);
                 }
-                catch (System.ArgumentException)
+                catch (System.ArgumentException ex)
                 {
                     // 未対応のエンコーディングの場合は UTF-8 をフォールバックとして使用します。
+                    System.Diagnostics.Trace.WriteLine($"Encoding not supported: {cdet.Charset}. Falling back to UTF-8. Error: {ex.Message}");
                     return System.Text.Encoding.UTF8;
                 }
             }

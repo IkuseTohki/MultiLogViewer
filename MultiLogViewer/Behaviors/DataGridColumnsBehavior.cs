@@ -18,6 +18,8 @@ namespace MultiLogViewer.Behaviors
     /// </summary>
     public static class DataGridColumnsBehavior
     {
+        private const string AdditionalDataPrefix = "AdditionalData[";
+
         public static readonly DependencyProperty BindableColumnsProperty =
             DependencyProperty.RegisterAttached(
                 "BindableColumns",
@@ -90,12 +92,12 @@ namespace MultiLogViewer.Behaviors
                 return CreateBookmarkColumn(dataGrid, config);
             }
 
-            if (config.BindingPath == "Message")
+            if (string.Equals(config.BindingPath, "Message", StringComparison.OrdinalIgnoreCase))
             {
                 return CreateMessageColumn(dataGrid, config);
             }
 
-            if (config.BindingPath == "Timestamp")
+            if (string.Equals(config.BindingPath, "Timestamp", StringComparison.OrdinalIgnoreCase))
             {
                 return CreateTimestampColumn(dataGrid, config);
             }
@@ -208,7 +210,15 @@ namespace MultiLogViewer.Behaviors
 
         private static DataGridTextColumn CreateStandardTextColumn(DisplayColumnConfig config)
         {
-            var binding = new Binding(config.BindingPath) { Mode = BindingMode.OneWay };
+            // AdditionalData[key] は LogEntry 自身のインデクサ [key] を使用するように変換する
+            string path = config.BindingPath;
+            if (path.StartsWith(AdditionalDataPrefix, StringComparison.OrdinalIgnoreCase) && path.EndsWith("]"))
+            {
+                // "AdditionalData" 部分を削って "[key]" にする (インデックス14の '[' から開始)
+                path = path.Substring(AdditionalDataPrefix.Length - 1);
+            }
+
+            var binding = new Binding(path) { Mode = BindingMode.OneWay };
             if (!string.IsNullOrEmpty(config.StringFormat)) binding.StringFormat = config.StringFormat;
 
             return new DataGridTextColumn
@@ -227,9 +237,16 @@ namespace MultiLogViewer.Behaviors
 
             var cellStyle = column.CellStyle ?? new Style(typeof(DataGridCell));
 
-            void AddBindingSetter(DependencyProperty prop, string path, string param)
+            // AdditionalData[key] は LogEntry 自身のインデクサ [key] を使用するように変換する
+            string path = config.BindingPath;
+            if (path.StartsWith(AdditionalDataPrefix, StringComparison.OrdinalIgnoreCase) && path.EndsWith("]"))
             {
-                var binding = new Binding(path)
+                path = path.Substring(AdditionalDataPrefix.Length - 1);
+            }
+
+            void AddBindingSetter(DependencyProperty prop, string bindingPath, string param)
+            {
+                var binding = new Binding(bindingPath)
                 {
                     Converter = new CellStyleConverter { StyleConfig = config.StyleConfig },
                     ConverterParameter = param
@@ -237,9 +254,9 @@ namespace MultiLogViewer.Behaviors
                 cellStyle.Setters.Add(new Setter(prop, binding));
             }
 
-            AddBindingSetter(DataGridCell.BackgroundProperty, config.BindingPath, "Background");
-            AddBindingSetter(DataGridCell.ForegroundProperty, config.BindingPath, "Foreground");
-            AddBindingSetter(DataGridCell.FontWeightProperty, config.BindingPath, "FontWeight");
+            AddBindingSetter(DataGridCell.BackgroundProperty, path, "Background");
+            AddBindingSetter(DataGridCell.ForegroundProperty, path, "Foreground");
+            AddBindingSetter(DataGridCell.FontWeightProperty, path, "FontWeight");
 
             column.CellStyle = cellStyle;
         }

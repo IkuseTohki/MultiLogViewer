@@ -485,12 +485,16 @@ namespace MultiLogViewer.ViewModels
             if (SelectedLogEntry == null) return;
 
             var values = new List<string>();
+            var now = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff");
+
             foreach (var column in DisplayColumns)
             {
                 values.Add(LogEntryValueConverter.GetStringValue(SelectedLogEntry, column));
             }
 
             var textToCopy = string.Join("\t", values);
+            System.Diagnostics.Trace.WriteLine($"[{now}] Copy command executed. Timestamp: {SelectedLogEntry.Timestamp}, Text length: {textToCopy.Length}");
+
             _clipboardService.SetText(textToCopy);
         }
 

@@ -115,6 +115,37 @@ namespace MultiLogViewer.Tests
         }
 
         [TestMethod]
+        public async Task CopyCommand_CopiesSelectedEntryToClipboard_CaseInsensitiveBindingPath()
+        {
+            // Arrange
+            _viewModel = CreateViewModel();
+            var logs = new List<LogEntry>
+            {
+                new LogEntry
+                {
+                    Message = "Case Insensitive Message",
+                    Timestamp = new System.DateTime(2023, 1, 1, 12, 0, 0),
+                }
+            };
+
+            // 小文字の "message" を使用
+            _viewModel.DisplayColumns = new ObservableCollection<DisplayColumnConfig>
+            {
+                new DisplayColumnConfig { Header = "Msg", BindingPath = "message" }
+            };
+
+            await SetLogsToViewModel(_viewModel, logs);
+            _viewModel.SelectedLogEntry = logs[0];
+
+            // Act
+            _viewModel.CopyCommand.Execute(null);
+
+            // Assert
+            var expectedText = "Case Insensitive Message";
+            _mockClipboardService.Verify(c => c.SetText(expectedText), Times.Once);
+        }
+
+        [TestMethod]
         public async Task AddExtensionFilterCommand_AddsKeyAndRefreshesView()
         {
             // Arrange
