@@ -1,0 +1,11 @@
+log_formats:
+  - name: "SubPatternTestLog"
+    log_file_patterns: ["test.log"]
+    pattern: "^(?<message>.*)$"
+    sub_patterns:
+      - source_field: "message"
+        pattern: "Code: (?<code>\\d+)"
+        match_type: "All"
+        separator: ";"
+        options: ["Singleline", "IgnoreCase"]
+

@@ -48,6 +48,14 @@ log_formats:
     sub_patterns:
       - source_field: "message"
         pattern: "User '(?<user>\\w+)' from (?<ip>[\\d\\.]+)"
+        # match_type: "First" (デフォルト) または "All" (全マッチ抽出)
+        match_type: "All"
+        # match_type: "All" の場合の結合文字 (デフォルト: ", ")
+        separator: ", "
+        # 正規表現オプション (例: Singleline, IgnoreCase)
+        options:
+          - "Singleline"
+          - "IgnoreCase"
 ```
 
 ### 2.3 ログの読み込みとパース

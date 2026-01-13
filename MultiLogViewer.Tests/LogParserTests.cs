@@ -264,5 +264,165 @@ namespace MultiLogViewer.Tests
             Assert.AreEqual("", result.AdditionalData["level"]);
             Assert.AreEqual("Empty level", result.Message);
         }
+
+        /// <summary>
+        /// テスト観点: sub_patterns の MatchType が All の場合、複数回出現するパターンがすべて抽出され、
+        /// 指定されたセパレータで結合されることを確認する。
+        /// </summary>
+        [TestMethod]
+        public void ParseLogEntry_WithGlobalMatch_ExtractsAllMatches()
+        {
+            // Arrange
+            var config = new LogFormatConfig
+            {
+                Name = "GlobalMatchLog",
+                Pattern = @"(?s)^(?<message>.*)$",
+                SubPatterns = new List<SubPatternConfig>
+                {
+                    new SubPatternConfig
+                    {
+                        SourceField = "message",
+                        Pattern = @"Item:(?<item>\w+)",
+                        MatchType = MultiLogViewer.Models.MatchType.All,
+                        Separator = ", "
+                    }
+                }
+            };
+            var logLine = "Processing list: Item:Apple, Item:Banana, Item:Cherry";
+            var parser = new LogParser(config);
+
+            // Act
+            var logEntry = parser.Parse(logLine, "test.log", 1);
+
+            // Assert
+            Assert.IsNotNull(logEntry);
+            Assert.IsTrue(logEntry.AdditionalData.ContainsKey("item"));
+            Assert.AreEqual("Apple, Banana, Cherry", logEntry.AdditionalData["item"]);
+        }
+
+        /// <summary>
+        /// テスト観点: sub_patterns の Options に Singleline が指定されている場合、
+        /// ドット(.)が改行にもマッチして抽出できることを確認する。
+        /// </summary>
+        [TestMethod]
+        public void ParseLogEntry_WithRegexOptions_AppliesOptions()
+        {
+            // Arrange
+            var config = new LogFormatConfig
+            {
+                Name = "MultilineOptionLog",
+                Pattern = @"(?s)^(?<message>.*)$",
+                SubPatterns = new List<SubPatternConfig>
+                {
+                    new SubPatternConfig
+                    {
+                        SourceField = "message",
+                        Pattern = @"Start(?<content>.*)End",
+                        Options = new System.Collections.Generic.List<string> { "Singleline" }
+                    }
+                }
+            };
+            // 実際にはLogFileReaderで改行コードが処理されるが、Messageプロパティには改行が含まれている前提
+            var logLine = "Start\nMulti\nLine\nEnd";
+            var parser = new LogParser(config);
+
+            // Act
+            var logEntry = parser.Parse(logLine, "test.log", 1);
+
+            // Assert
+            Assert.IsNotNull(logEntry);
+            Assert.IsTrue(logEntry.AdditionalData.ContainsKey("content"));
+            // \nMulti\nLine\n が抽出される (改行含む)
+            Assert.IsTrue(logEntry.AdditionalData["content"].Contains("Multi"));
+            Assert.IsTrue(logEntry.AdditionalData["content"].Contains("Line"));
+        }
+
+        /// <summary>
+        /// テスト観点: サブパターンの抽出結果を、後続のサブパターンが SourceField として利用できることを確認する（抽出の連鎖）。
+        /// </summary>
+        [TestMethod]
+        public void ParseLogEntry_SubPatternChaining_ExtractsSequentially()
+        {
+            // Arrange
+            var config = new LogFormatConfig
+            {
+                Name = "ChainingLog",
+                Pattern = @"^(?<message>.*)$",
+                SubPatterns = new List<SubPatternConfig>
+                {
+                    // 1. message から JSON風文字列全体を抽出 -> 'json_data'
+                    new SubPatternConfig
+                    {
+                        SourceField = "message",
+                        Pattern = @"Data:{(?<json_data>.*)}",
+                    },
+                    // 2. 'json_data' から特定の値を抽出 -> 'target_value'
+                    new SubPatternConfig
+                    {
+                        SourceField = "json_data",
+                        Pattern = @"target:(?<target_value>\w+)"
+                    }
+                }
+            };
+            var logLine = "Info Data:{id:1, target:Success, time:123}";
+            var parser = new LogParser(config);
+
+            // Act
+            var logEntry = parser.Parse(logLine, "test.log", 1);
+
+            // Assert
+            Assert.IsNotNull(logEntry);
+            Assert.IsTrue(logEntry.AdditionalData.ContainsKey("json_data"));
+            Assert.AreEqual("id:1, target:Success, time:123", logEntry.AdditionalData["json_data"]);
+
+            Assert.IsTrue(logEntry.AdditionalData.ContainsKey("target_value"), "Should extract from the field created by previous sub-pattern.");
+            Assert.AreEqual("Success", logEntry.AdditionalData["target_value"]);
+        }
+
+        /// <summary>
+        /// テスト観点: MatchType: All の場合に、複数のキャプチャグループがそれぞれ変換処理を受けた上で、
+        /// 正しく結合されることを確認する。
+        /// </summary>
+        [TestMethod]
+        public void ParseLogEntry_AllMatchWithMultipleGroupsAndTransforms_WorksCorrectly()
+        {
+            // Arrange
+            var config = new LogFormatConfig
+            {
+                Name = "ComplexAllMatchLog",
+                Pattern = @"^(?<message>.*)$",
+                SubPatterns = new List<SubPatternConfig>
+                {
+                    new SubPatternConfig
+                    {
+                        SourceField = "message",
+                        Pattern = @"Item:(?<name>\w+)\((?<price>\d+)\)",
+                        MatchType = MultiLogViewer.Models.MatchType.All,
+                        Separator = "|",
+                        FieldTransforms = new List<FieldTransformConfig>
+                        {
+                            new FieldTransformConfig { Field = "name", Format = "[{value}]" },
+                            new FieldTransformConfig { Field = "price", Format = "${value}" }
+                        }
+                    }
+                }
+            };
+            var logLine = "Orders: Item:Apple(100), Item:Banana(200), Item:Cherry(300)";
+            var parser = new LogParser(config);
+
+            // Act
+            var logEntry = parser.Parse(logLine, "test.log", 1);
+
+            // Assert
+            Assert.IsNotNull(logEntry);
+
+            // nameグループの検証: [Apple]|[Banana]|[Cherry]
+            Assert.IsTrue(logEntry.AdditionalData.ContainsKey("name"));
+            Assert.AreEqual("[Apple]|[Banana]|[Cherry]", logEntry.AdditionalData["name"]);
+
+            // priceグループの検証: $100|$200|$300
+            Assert.IsTrue(logEntry.AdditionalData.ContainsKey("price"));
+            Assert.AreEqual("$100|$200|$300", logEntry.AdditionalData["price"]);
+        }
     }
 }

@@ -3,12 +3,43 @@ using MultiLogViewer.Models;
 using MultiLogViewer.Services;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace MultiLogViewer.Tests
 {
     [TestClass]
     public class LogFormatConfigLoaderTests
     {
+        // ... (existing tests) ...
+
+        /// <summary>
+        /// テスト観点: sub_patterns の拡張設定 (match_type, separator, options) が正しく読み込まれることを確認する。
+        /// </summary>
+        [TestMethod]
+        public void LoadConfig_SubPatternConfig_ReturnsExtendedProperties()
+        {
+            // Arrange
+            var logProfilePath = "TestConfigs/subpattern_log_profile.yaml";
+            var loader = new LogFormatConfigLoader();
+
+            // Act
+            var config = loader.Load(logProfilePath, "");
+
+            // Assert
+            Assert.IsNotNull(config);
+            Assert.AreEqual(1, config.LogFormats.Count);
+
+            var subPattern = config.LogFormats[0].SubPatterns.FirstOrDefault();
+            Assert.IsNotNull(subPattern);
+
+            Assert.AreEqual(MultiLogViewer.Models.MatchType.All, subPattern.MatchType);
+            Assert.AreEqual(";", subPattern.Separator);
+
+            Assert.IsNotNull(subPattern.Options);
+            Assert.IsTrue(subPattern.Options.Contains("Singleline"));
+            Assert.IsTrue(subPattern.Options.Contains("IgnoreCase"));
+        }
+
         /// <summary>
         /// テスト観点: TestConfigs/valid_log_profile.yaml (ログプロファイル) ファイルが正しく読み込まれ、AppConfigオブジェクトが生成されることを確認する。
         /// </summary>
