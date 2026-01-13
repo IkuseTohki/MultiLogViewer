@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using MultiLogViewer.Utils;
 
 namespace MultiLogViewer.Services
 {
@@ -15,12 +16,12 @@ namespace MultiLogViewer.Services
                 return args[0];
             }
 
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DefaultLogProfileName);
+            return Path.Combine(PathHelper.GetBaseDirectory(), DefaultLogProfileName);
         }
 
         public string GetAppSettingsPath()
         {
-            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppSettingsFileName);
+            return Path.Combine(PathHelper.GetBaseDirectory(), AppSettingsFileName);
         }
     }
 }

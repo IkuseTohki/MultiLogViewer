@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using MultiLogViewer.Services;
 using MultiLogViewer.ViewModels;
+using MultiLogViewer.Utils;
 using System.Windows;
 
 namespace MultiLogViewer
@@ -74,7 +75,7 @@ namespace MultiLogViewer
                 var settings = appSettingsService.Load();
                 if (settings != null && settings.EnableTraceLog)
                 {
-                    var logPath = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "trace.log");
+                    var logPath = System.IO.Path.Combine(PathHelper.GetBaseDirectory(), "trace.log");
                     var listener = new System.Diagnostics.TextWriterTraceListener(logPath);
                     System.Diagnostics.Trace.Listeners.Add(listener);
                     System.Diagnostics.Trace.AutoFlush = true;
