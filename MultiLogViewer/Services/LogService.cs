@@ -55,7 +55,7 @@ namespace MultiLogViewer.Services
 
                     var (entries, state) = _logFileReader.ReadIncremental(new FileState(path, 0, 0), configs);
 
-                    foreach (var entry in entries.Where(e => e.Timestamp >= limit))
+                    foreach (var entry in entries.Where(e => limit == null || e.Timestamp >= limit.Value))
                     {
                         entry.SequenceNumber = currentSequence++;
                         allEntries.Add(entry);
@@ -113,7 +113,7 @@ namespace MultiLogViewer.Services
 
                 var (entries, state) = _logFileReader.ReadIncremental(currentState, configs);
 
-                foreach (var entry in entries.Where(e => e.Timestamp >= limit))
+                foreach (var entry in entries.Where(e => limit == null || e.Timestamp >= limit.Value))
                 {
                     entry.SequenceNumber = currentSequence++;
                     newEntries.Add(entry);

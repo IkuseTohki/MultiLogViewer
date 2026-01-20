@@ -3,47 +3,47 @@
 
 # 画面に表示する列の設定
 display_columns:
-  - { header: "Timestamp", binding_path: "Timestamp", width: 180, string_format: "yyyy/MM/dd HH:mm:ss.fff" }
-  - { header: "Level", binding_path: "AdditionalData[level]", width: 80 }
-  - { header: "Message", binding_path: "Message", width: 400 }
-  - { header: "File", binding_path: "FileName", width: 150 }
-  - { header: "Line", binding_path: "LineNumber", width: 60 }
+  - { header: Timestamp, binding_path: Timestamp, width: 180, string_format: yyyy/MM/dd HH:mm:ss.fff }
+  - { header: Level, binding_path: "AdditionalData[level]", width: 80 }
+  - { header: Message, binding_path: Message, width: 400 }
+  - { header: File, binding_path: FileName, width: 150 }
+  - { header: Line, binding_path: LineNumber, width: 60 }
 
 # カラムごとのスタイル設定 (ハイライト & セマンティック・カラーリング)
 column_styles:
-  - column_header: "Level"
+  - column_header: Level
     rules:
-      - pattern: 'ERROR|❌ ERROR'
-        foreground: "White"
+      - pattern: ERROR|❌ ERROR
+        foreground: White
         background: "#D32F2F" # Red
-        font_weight: "Bold"
-      - pattern: 'WARN|⚠ WARN'
-        foreground: "Black"
+        font_weight: Bold
+      - pattern: WARN|⚠ WARN
+        foreground: Black
         background: "#FFF9C4" # Light Yellow
-  - column_header: "User"
+  - column_header: User
     semantic_coloring: true
 
 # ログファイルの読み込みルール
 log_formats:
-  - name: "SampleLog"
+  - name: SampleLog
     log_file_patterns:
-      - "sample.log"
+      - 'sample.log'
       # 日付ごとのフォルダ（例: logs/20231221/*.log）を自動で監視する場合の例:
       # - "logs/{yyyy}{MM}{dd}/*.log"
     # 例: 2023-12-20 10:00:00 [INFO] メッセージ
-    pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}" \[(?<level>\\w+)\] (?<message>.*)$'
-    timestamp_format: "yyyy-MM-dd HH:mm:ss"
+    pattern: '^(?<Timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}:\d{3}) \[(?<level>\w+)\] (?<message>.*)$'
+    timestamp_format: yyyy-MM-dd HH:mm:ss:fff
     is_multiline: true
 
     # 表示の変換例
     field_transforms:
-      - field: "level"
+      - field: level
         map:
-          "INFO": "ℹ INFO"
-          "WARN": "⚠ WARN"
-          "ERROR": "❌ ERROR"
+          INFO: ℹ INFO
+          WARN: ⚠ WARN
+          ERROR: ❌ ERROR
 
     # 詳細なパース例 (message内から追加情報を抽出)
     sub_patterns:
-      - source_field: "message"
+      - source_field: message
         pattern: 'user=(?<user>\w+)'

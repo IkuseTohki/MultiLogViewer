@@ -20,12 +20,12 @@ namespace MultiLogViewer.Utils
         /// 設定文字列から具体的な開始日時を計算します。
         /// </summary>
         /// <param name="input">設定文字列 (today, -1d, 2023-01-01 など)</param>
-        /// <returns>計算された日時。</returns>
-        public DateTime Calculate(string? input)
+        /// <returns>計算された日時。制限なしの場合は null。</returns>
+        public DateTime? Calculate(string? input)
         {
             if (string.IsNullOrWhiteSpace(input))
             {
-                return _timeProvider.Today;
+                return null;
             }
 
             var trimmedInput = input.Trim().ToLower();
